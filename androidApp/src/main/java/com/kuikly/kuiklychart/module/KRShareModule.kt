@@ -1,4 +1,4 @@
-package com.kuikly.kuiklychat.module
+package com.kuikly.kuiklychart.module
 
 import com.tencent.kuikly.core.render.android.export.KuiklyRenderBaseModule
 

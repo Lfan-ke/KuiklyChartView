@@ -1,4 +1,4 @@
-package com.kuikly.kuiklychat
+package com.kuikly.kuiklychart
 
 import android.app.Application
 

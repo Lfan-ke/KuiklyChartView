@@ -1,4 +1,4 @@
-package com.kuikly.kuiklychat
+package com.kuikly.kuiklychart
 
 import android.content.Context
 import android.content.Intent
@@ -13,15 +13,15 @@ import com.tencent.kuikly.core.render.android.adapter.KuiklyRenderAdapterManager
 import com.tencent.kuikly.core.render.android.css.ktx.toMap
 import com.tencent.kuikly.core.render.android.expand.KuiklyRenderViewBaseDelegatorDelegate
 import com.tencent.kuikly.core.render.android.expand.KuiklyRenderViewBaseDelegator
-import com.kuikly.kuiklychat.adapter.KRColorParserAdapter
-import com.kuikly.kuiklychat.adapter.KRFontAdapter
-import com.kuikly.kuiklychat.adapter.KRImageAdapter
-import com.kuikly.kuiklychat.adapter.KRLogAdapter
-import com.kuikly.kuiklychat.adapter.KRRouterAdapter
-import com.kuikly.kuiklychat.adapter.KRThreadAdapter
-import com.kuikly.kuiklychat.adapter.KRUncaughtExceptionHandlerAdapter
-import com.kuikly.kuiklychat.module.KRBridgeModule
-import com.kuikly.kuiklychat.module.KRShareModule
+import com.kuikly.kuiklychart.adapter.KRColorParserAdapter
+import com.kuikly.kuiklychart.adapter.KRFontAdapter
+import com.kuikly.kuiklychart.adapter.KRImageAdapter
+import com.kuikly.kuiklychart.adapter.KRLogAdapter
+import com.kuikly.kuiklychart.adapter.KRRouterAdapter
+import com.kuikly.kuiklychart.adapter.KRThreadAdapter
+import com.kuikly.kuiklychart.adapter.KRUncaughtExceptionHandlerAdapter
+import com.kuikly.kuiklychart.module.KRBridgeModule
+import com.kuikly.kuiklychart.module.KRShareModule
 import org.json.JSONObject
 
 class KuiklyRenderActivity : AppCompatActivity(), KuiklyRenderViewBaseDelegatorDelegate {

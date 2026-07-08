@@ -1,8 +1,8 @@
-package com.kuikly.kuiklychat
+package com.kuikly.kuiklychart
 
 import android.content.Context
 import android.util.Log
-import com.kuikly.kuiklychat.adapter.execOnSubThread
+import com.kuikly.kuiklychart.adapter.execOnSubThread
 import java.io.IOException
 import java.util.regex.Pattern
 

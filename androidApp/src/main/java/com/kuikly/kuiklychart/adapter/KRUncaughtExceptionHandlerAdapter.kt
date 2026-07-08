@@ -1,8 +1,8 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
 import android.util.Log
 import com.tencent.kuikly.core.render.android.adapter.IKRUncaughtExceptionHandlerAdapter
-import com.kuikly.kuiklychat.BuildConfig
+import com.kuikly.kuiklychart.BuildConfig
 
 object KRUncaughtExceptionHandlerAdapter : IKRUncaughtExceptionHandlerAdapter {
 

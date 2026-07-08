@@ -1,8 +1,8 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
 import android.graphics.Typeface
 import com.tencent.kuikly.core.render.android.adapter.IKRFontAdapter
-import com.kuikly.kuiklychat.KRApplication
+import com.kuikly.kuiklychart.KRApplication
 
 object KRFontAdapter : IKRFontAdapter {
 

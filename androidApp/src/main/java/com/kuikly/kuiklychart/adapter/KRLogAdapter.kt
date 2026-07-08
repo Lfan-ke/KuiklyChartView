@@ -1,4 +1,4 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
 import android.util.Log
 import com.tencent.kuikly.core.render.android.adapter.IKRLogAdapter

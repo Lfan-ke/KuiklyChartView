@@ -1,6 +1,6 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
-import com.kuikly.kuiklychat.KRApplication
+import com.kuikly.kuiklychart.KRApplication
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap

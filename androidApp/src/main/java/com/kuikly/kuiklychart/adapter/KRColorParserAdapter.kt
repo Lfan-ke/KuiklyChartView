@@ -1,9 +1,9 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
 import android.content.Context
 import android.graphics.Color
 import com.tencent.kuikly.core.render.android.adapter.IKRColorParserAdapter
-import com.kuikly.kuiklychat.SkinIniFile
+import com.kuikly.kuiklychart.SkinIniFile
 
 class KRColorParserAdapter(context: Context) : IKRColorParserAdapter {
 

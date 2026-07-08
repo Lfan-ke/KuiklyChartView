@@ -1,4 +1,4 @@
-package com.kuikly.kuiklychat.module
+package com.kuikly.kuiklychart.module
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -7,8 +7,8 @@ import android.util.Log
 import android.widget.Toast
 import com.tencent.kuikly.core.render.android.export.KuiklyRenderBaseModule
 import com.tencent.kuikly.core.render.android.export.KuiklyRenderCallback
-import com.kuikly.kuiklychat.KRApplication
-import com.kuikly.kuiklychat.KuiklyRenderActivity
+import com.kuikly.kuiklychart.KRApplication
+import com.kuikly.kuiklychart.KuiklyRenderActivity
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader

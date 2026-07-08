@@ -1,4 +1,4 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
 import com.tencent.kuikly.core.render.android.adapter.IKRThreadAdapter
 import java.util.concurrent.Executors

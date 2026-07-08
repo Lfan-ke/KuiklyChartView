@@ -1,9 +1,9 @@
-package com.kuikly.kuiklychat.adapter
+package com.kuikly.kuiklychart.adapter
 
 import android.app.Activity
 import android.content.Context
 import com.tencent.kuikly.core.render.android.adapter.IKRRouterAdapter
-import com.kuikly.kuiklychat.KuiklyRenderActivity
+import com.kuikly.kuiklychart.KuiklyRenderActivity
 import org.json.JSONObject
 
 object KRRouterAdapter : IKRRouterAdapter {
