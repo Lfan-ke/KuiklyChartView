@@ -34,6 +34,11 @@ import com.tencent.kuiklybase.chart.TreemapChart
 import com.tencent.kuiklybase.chart.TreemapNode
 import com.tencent.kuiklybase.chart.BoxplotChart
 import com.tencent.kuiklybase.chart.BoxplotData
+import com.tencent.kuiklybase.chart.BubbleChart
+import com.tencent.kuiklybase.chart.BubbleData
+import com.tencent.kuiklybase.chart.SankeyChart
+import com.tencent.kuiklybase.chart.SankeyNode
+import com.tencent.kuiklybase.chart.SankeyLink
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -46,6 +51,8 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
     private var lastHeatmapClick by observable("")
     private var lastTreemapClick by observable("")
     private var lastBoxplotClick by observable("")
+    private var lastBubbleClick by observable("")
+    private var lastSankeyClick by observable("")
     private var gaugeValue by observable(72f)
 
     override fun body(): ViewBuilder {
