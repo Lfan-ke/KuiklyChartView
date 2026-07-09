@@ -1558,11 +1558,11 @@ function renderDonutChart(canvas, data, opts, colors) {
   ctx.fillStyle = labelColor();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '700 26px -apple-system, sans-serif';
-  ctx.fillText(total.toLocaleString(), cx, cy - 6);
+  ctx.font = '700 15px -apple-system, sans-serif';
+  ctx.fillText(total.toLocaleString(), cx, cy - 5);
   ctx.fillStyle = axisTextColor();
-  ctx.font = '11px -apple-system, sans-serif';
-  ctx.fillText(opts.centerLabel || 'Total', cx, cy + 16);
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.fillText(opts.centerLabel || 'Total', cx, cy + 12);
 
   // legend at bottom
   if (opts.legend) {
@@ -2021,7 +2021,7 @@ function renderGaugeChart(canvas, data, opts, colors) {
 
   // value text
   ctx.fillStyle = labelColor();
-  ctx.font = '700 28px -apple-system, sans-serif';
+  ctx.font = '700 16px -apple-system, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(Math.round(value), cx, cy + radius * 0.5);
@@ -2759,13 +2759,13 @@ function renderProgressRingChart(canvas, data, opts, colors) {
   if (opts.centerText) {
     const avg = Math.round(rings.reduce((a, b) => a + b.value / b.max, 0) / rings.length * 100);
     ctx.fillStyle = labelColor();
-    ctx.font = '700 22px -apple-system, sans-serif';
+    ctx.font = '700 13px -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(avg + '%', cx, cy - 4);
+    ctx.fillText(avg + '%', cx, cy - 3);
     ctx.font = '9px -apple-system, sans-serif';
     ctx.fillStyle = axisTextColor();
-    ctx.fillText('Overall', cx, cy + 14);
+    ctx.fillText('Overall', cx, cy + 11);
   }
 
   // legend below
