@@ -21,10 +21,12 @@ import com.tencent.kuikly.core.base.ComposeEvent
 import com.tencent.kuikly.core.base.ComposeView
 import com.tencent.kuikly.core.base.ViewBuilder
 import com.tencent.kuikly.core.base.ViewContainer
+import com.tencent.kuikly.core.base.event.ClickParams
 import com.tencent.kuikly.core.reactive.handler.observable
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 fun ViewContainer<*, *>.LineChart(init: LineChartView.() -> Unit) {
     addChild(LineChartView(), init)
@@ -116,6 +118,9 @@ class LineChartAttr : ChartAttr() {
 
 class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
 
+    private var lastW = 0f
+    private var lastH = 0f
+
     override fun createAttr() = LineChartAttr()
     override fun createEvent() = ChartEvent()
 
@@ -124,7 +129,14 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
         return {
             Canvas({
                 attr { absolutePositionAllZero() }
+                event {
+                    click { params ->
+                        ctx.handleLineClick(params)
+                    }
+                }
             }) { context, w, h ->
+                ctx.lastW = w
+                ctx.lastH = h
                 val series = ctx.attr.seriesList
                 if (series.isEmpty()) return@Canvas
 
@@ -215,6 +227,40 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
             }
         }
     }
+
+    private fun handleLineClick(params: ClickParams) {
+        val handler = event.onPointClickHandler ?: return
+        val w = lastW
+        val h = lastH
+        if (w == 0f || h == 0f) return
+        val series = attr.seriesList
+        if (series.isEmpty()) return
+        val values = allValues(series)
+        val (minVal, maxVal) = computeRange(values)
+        val range = maxVal - minVal
+        if (range < 1e-6f) return
+        val plotW = w - PADDING_LEFT - PADDING_RIGHT
+        val plotH = h - PADDING_TOP - PADDING_BOTTOM
+        fun toX(idx: Int, total: Int): Float =
+            PADDING_LEFT + if (total > 1) idx * plotW / (total - 1) else plotW / 2f
+        fun toY(value: Float): Float =
+            PADDING_TOP + plotH * (1f - (value - minVal) / range)
+        val hitRadius = attr.dotRadius + 8f
+        var found = false
+        series.forEachIndexed { sIdx, s ->
+            if (found) return@forEachIndexed
+            val n = s.points.size
+            s.points.forEachIndexed { pIdx, pt ->
+                if (found) return@forEachIndexed
+                val dx = params.x - toX(pIdx, n)
+                val dy = params.y - toY(pt.value)
+                if (sqrt(dx * dx + dy * dy) <= hitRadius) {
+                    handler(sIdx, pIdx, pt.value)
+                    found = true
+                }
+            }
+        }
+    }
 }
 
 class BarChartAttr : ChartAttr() {
@@ -230,6 +276,9 @@ class BarChartAttr : ChartAttr() {
 
 class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
 
+    private var lastW = 0f
+    private var lastH = 0f
+
     override fun createAttr() = BarChartAttr()
     override fun createEvent() = ChartEvent()
 
@@ -238,7 +287,14 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
         return {
             Canvas({
                 attr { absolutePositionAllZero() }
+                event {
+                    click { params ->
+                        ctx.handleBarClick(params)
+                    }
+                }
             }) { context, w, h ->
+                ctx.lastW = w
+                ctx.lastH = h
                 val series = ctx.attr.seriesList
                 if (series.isEmpty()) return@Canvas
 
@@ -329,6 +385,41 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
                         val x = PADDING_LEFT + spacing / 2f + gIdx * slotW + (nSeries - 1) * barW / 2f
                         context.fillText(pt.label, x - pt.label.length * 3f, PADDING_TOP + plotH + 18f)
                     }
+                }
+            }
+        }
+    }
+
+    private fun handleBarClick(params: ClickParams) {
+        val handler = event.onPointClickHandler ?: return
+        val w = lastW
+        val h = lastH
+        if (w == 0f || h == 0f) return
+        val series = attr.seriesList
+        if (series.isEmpty()) return
+        val values = allValues(series)
+        val (_, rawMax) = computeRange(values)
+        val maxVal = if (rawMax == 0f) 1f else rawMax
+        val plotW = w - PADDING_LEFT - PADDING_RIGHT
+        val plotH = h - PADDING_TOP - PADDING_BOTTOM
+        val nGroups = series.maxOfOrNull { it.points.size } ?: return
+        val nSeries = series.size
+        val slotW = plotW / nGroups
+        val spacing = slotW * attr.barSpacing
+        val barW = (slotW - spacing) / nSeries
+        fun toY(value: Float): Float = PADDING_TOP + plotH * (1f - value / maxVal)
+        var found = false
+        series.forEachIndexed { sIdx, s ->
+            if (found) return@forEachIndexed
+            s.points.forEachIndexed { gIdx, pt ->
+                if (found) return@forEachIndexed
+                if (pt.value <= 0f) return@forEachIndexed
+                val x = PADDING_LEFT + spacing / 2f + gIdx * slotW + sIdx * barW
+                val barTop = toY(pt.value)
+                val barBottom = PADDING_TOP + plotH
+                if (params.x >= x && params.x <= x + barW && params.y >= barTop && params.y <= barBottom) {
+                    handler(sIdx, gIdx, pt.value)
+                    found = true
                 }
             }
         }
