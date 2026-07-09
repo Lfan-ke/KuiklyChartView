@@ -634,3 +634,456 @@ class PieChartView : ComposeView<PieChartAttr, PieChartEvent>() {
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// RadarChart (spider / web chart)
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.RadarChart(init: RadarChartView.() -> Unit) {
+    addChild(RadarChartView(), init)
+}
+
+data class RadarAxis(val label: String, val max: Float)
+
+data class RadarSeries(
+    val name: String,
+    val values: List<Float>,
+    val color: Color,
+    val fillColor: Color = Color(180, 180, 180, 0.2f),
+)
+
+class RadarChartAttr : ComposeAttr() {
+    internal var axes by observable(emptyList<RadarAxis>())
+    internal var series by observable(emptyList<RadarSeries>())
+    internal var webColor by observable(Color(220, 220, 220, 1f))
+    internal var webLevels by observable(4)
+    internal var showAxisLabels by observable(true)
+    internal var labelFontSize by observable(11f)
+    internal var showLegend by observable(true)
+
+    fun axes(vararg axis: RadarAxis) { axes = axis.toList() }
+    fun axes(list: List<RadarAxis>) { axes = list }
+    fun series(vararg s: RadarSeries) { series = s.toList() }
+    fun series(list: List<RadarSeries>) { series = list }
+    fun webColor(color: Color) { webColor = color }
+    fun webLevels(count: Int) { webLevels = count.coerceIn(2, 8) }
+    fun showAxisLabels(show: Boolean) { showAxisLabels = show }
+    fun labelFontSize(size: Float) { labelFontSize = size }
+    fun showLegend(show: Boolean) { showLegend = show }
+    fun size(w: Float, h: Float) { if (!w.isNaN()) width(w); if (!h.isNaN()) height(h) }
+}
+
+class RadarChartEvent : ComposeEvent() {
+    internal var onSeriesClickHandler: ((seriesIndex: Int, name: String) -> Unit)? = null
+    fun onSeriesClick(handler: (seriesIndex: Int, name: String) -> Unit) { onSeriesClickHandler = handler }
+}
+
+class RadarChartView : ComposeView<RadarChartAttr, RadarChartEvent>() {
+    override fun createAttr() = RadarChartAttr()
+    override fun createEvent() = RadarChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { absolutePositionAllZero() } }) { context, w, h ->
+                val a = ctx.attr
+                val n = a.axes.size
+                if (n < 3) return@Canvas
+
+                val legendH = if (a.showLegend) 24f else 0f
+                val chartH = h - legendH
+                val cx = w / 2f
+                val cy = chartH / 2f
+                val r = (minOf(w, chartH) / 2f - 36f).coerceAtLeast(10f)
+                val levels = a.webLevels
+
+                for (level in 1..levels) {
+                    val frac = level.toFloat() / levels
+                    context.beginPath()
+                    for (i in 0 until n) {
+                        val angle = 2f * PI.toFloat() * i / n - PI.toFloat() / 2f
+                        val px = cx + r * frac * cos(angle)
+                        val py = cy + r * frac * sin(angle)
+                        if (i == 0) context.moveTo(px, py) else context.lineTo(px, py)
+                    }
+                    context.closePath()
+                    context.strokeStyle(a.webColor)
+                    context.lineWidth(1f)
+                    context.stroke()
+                }
+
+                for (i in 0 until n) {
+                    val angle = 2f * PI.toFloat() * i / n - PI.toFloat() / 2f
+                    context.beginPath()
+                    context.moveTo(cx, cy)
+                    context.lineTo(cx + r * cos(angle), cy + r * sin(angle))
+                    context.strokeStyle(a.webColor)
+                    context.lineWidth(1f)
+                    context.stroke()
+                }
+
+                if (a.showAxisLabels) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(Color(80, 80, 80, 1f))
+                    for (i in 0 until n) {
+                        val angle = 2f * PI.toFloat() * i / n - PI.toFloat() / 2f
+                        val labelR = r + 18f
+                        val lx = cx + labelR * cos(angle)
+                        val ly = cy + labelR * sin(angle)
+                        val label = a.axes[i].label
+                        val offsetX = when {
+                            cos(angle) > 0.3f -> 0f
+                            cos(angle) < -0.3f -> -(label.length * 6f)
+                            else -> -(label.length * 3f)
+                        }
+                        context.fillText(label, lx + offsetX, ly + 4f)
+                    }
+                }
+
+                a.series.forEach { s ->
+                    if (s.values.size < n) return@forEach
+                    context.beginPath()
+                    for (i in 0 until n) {
+                        val frac = (s.values[i] / a.axes[i].max).coerceIn(0f, 1f)
+                        val angle = 2f * PI.toFloat() * i / n - PI.toFloat() / 2f
+                        val px = cx + r * frac * cos(angle)
+                        val py = cy + r * frac * sin(angle)
+                        if (i == 0) context.moveTo(px, py) else context.lineTo(px, py)
+                    }
+                    context.closePath()
+                    context.fillStyle(s.fillColor)
+                    context.fill()
+                    context.strokeStyle(s.color)
+                    context.lineWidth(2f)
+                    context.stroke()
+
+                    for (i in 0 until n) {
+                        val frac = (s.values[i] / a.axes[i].max).coerceIn(0f, 1f)
+                        val angle = 2f * PI.toFloat() * i / n - PI.toFloat() / 2f
+                        val px = cx + r * frac * cos(angle)
+                        val py = cy + r * frac * sin(angle)
+                        context.beginPath()
+                        context.arc(px, py, 4f, 0f, 2f * PI.toFloat(), false)
+                        context.fillStyle(s.color)
+                        context.fill()
+                    }
+                }
+
+                if (a.showLegend && a.series.isNotEmpty()) {
+                    val legendY = chartH + 6f
+                    val slotW = w / a.series.size.coerceAtLeast(1)
+                    context.font(a.labelFontSize)
+                    a.series.forEachIndexed { idx, s ->
+                        val lx = idx * slotW + 4f
+                        context.fillStyle(s.color)
+                        context.fillRect(lx, legendY, 10f, 10f)
+                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillText(s.name.take(8), lx + 14f, legendY + 9f)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// GaugeChart (semi-circular gauge)
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.GaugeChart(init: GaugeChartView.() -> Unit) {
+    addChild(GaugeChartView(), init)
+}
+
+class GaugeChartAttr : ComposeAttr() {
+    internal var value by observable(0f)
+    internal var minValue by observable(0f)
+    internal var maxValue by observable(100f)
+    internal var arcColor by observable(Color(0xFF1677FFL))
+    internal var trackColor by observable(Color(220, 220, 220, 1f))
+    internal var arcWidth by observable(16f)
+    internal var showNeedle by observable(true)
+    internal var needleColor by observable(Color(80, 80, 80, 1f))
+    internal var label by observable("")
+    internal var unit by observable("")
+    internal var showMinMax by observable(true)
+    internal var valueFontSize by observable(24f)
+    internal var labelFontSize by observable(12f)
+
+    fun value(v: Float) { value = v }
+    fun range(min: Float, max: Float) { minValue = min; maxValue = max }
+    fun arcColor(color: Color) { arcColor = color }
+    fun trackColor(color: Color) { trackColor = color }
+    fun arcWidth(w: Float) { arcWidth = w.coerceIn(4f, 48f) }
+    fun showNeedle(show: Boolean) { showNeedle = show }
+    fun needleColor(color: Color) { needleColor = color }
+    fun label(text: String) { label = text }
+    fun unit(text: String) { unit = text }
+    fun showMinMax(show: Boolean) { showMinMax = show }
+    fun valueFontSize(size: Float) { valueFontSize = size }
+    fun labelFontSize(size: Float) { labelFontSize = size }
+    fun size(w: Float, h: Float) { if (!w.isNaN()) width(w); if (!h.isNaN()) height(h) }
+}
+
+class GaugeChartView : ComposeView<GaugeChartAttr, ComposeEvent>() {
+    override fun createAttr() = GaugeChartAttr()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { absolutePositionAllZero() } }) { context, w, h ->
+                val a = ctx.attr
+                val cx = w / 2f
+                val cy = h * 0.62f
+                val r = (minOf(w * 0.85f, h * 1.15f) / 2f).coerceAtLeast(20f)
+
+                val startDeg = 135f
+                val sweepDeg = 270f
+                val startRad = startDeg * PI.toFloat() / 180f
+                val endRad = (startDeg + sweepDeg) * PI.toFloat() / 180f
+
+                val clampedValue = a.value.coerceIn(a.minValue, a.maxValue)
+                val fraction = if (a.maxValue > a.minValue)
+                    (clampedValue - a.minValue) / (a.maxValue - a.minValue) else 0f
+                val valueRad = startRad + sweepDeg * PI.toFloat() / 180f * fraction
+                val midR = r - a.arcWidth / 2f
+
+                context.beginPath()
+                context.arc(cx, cy, midR, startRad, endRad, false)
+                context.strokeStyle(a.trackColor)
+                context.lineWidth(a.arcWidth)
+                context.stroke()
+
+                if (fraction > 0f) {
+                    context.beginPath()
+                    context.arc(cx, cy, midR, startRad, valueRad, false)
+                    context.strokeStyle(a.arcColor)
+                    context.lineWidth(a.arcWidth)
+                    context.stroke()
+                }
+
+                if (a.showNeedle) {
+                    val needleLen = midR - a.arcWidth / 2f - 4f
+                    val nx = cx + needleLen * cos(valueRad)
+                    val ny = cy + needleLen * sin(valueRad)
+                    context.beginPath()
+                    context.moveTo(cx, cy)
+                    context.lineTo(nx, ny)
+                    context.strokeStyle(a.needleColor)
+                    context.lineWidth(2.5f)
+                    context.stroke()
+                    context.beginPath()
+                    context.arc(cx, cy, 5f, 0f, 2f * PI.toFloat(), false)
+                    context.fillStyle(a.needleColor)
+                    context.fill()
+                }
+
+                if (a.showMinMax) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(Color(120, 120, 120, 1f))
+                    val labelR = r + 6f
+                    val minX = cx + labelR * cos(startRad)
+                    val minY = cy + labelR * sin(startRad)
+                    context.fillText(a.minValue.fmt0(), minX - 14f, minY + 4f)
+                    val maxX = cx + labelR * cos(endRad)
+                    val maxY = cy + labelR * sin(endRad)
+                    context.fillText(a.maxValue.fmt0(), maxX - 6f, maxY + 4f)
+                }
+
+                context.font(a.valueFontSize)
+                context.fillStyle(Color(40, 40, 40, 1f))
+                val valText = if (a.unit.isEmpty()) clampedValue.fmt1() else "${clampedValue.fmt0()}${a.unit}"
+                val valW = valText.length * a.valueFontSize * 0.55f
+                context.fillText(valText, cx - valW / 2f, cy + r * 0.1f)
+
+                if (a.label.isNotEmpty()) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(Color(120, 120, 120, 1f))
+                    val lblW = a.label.length * a.labelFontSize * 0.55f
+                    context.fillText(a.label, cx - lblW / 2f, cy + r * 0.1f + a.valueFontSize + 4f)
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// ScatterChart (scatter / bubble chart)
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.ScatterChart(init: ScatterChartView.() -> Unit) {
+    addChild(ScatterChartView(), init)
+}
+
+data class ScatterPoint(
+    val x: Float,
+    val y: Float,
+    val size: Float = 6f,
+    val label: String = "",
+)
+
+data class ScatterSeries(
+    val name: String,
+    val points: List<ScatterPoint>,
+    val color: Color,
+)
+
+class ScatterChartAttr : ComposeAttr() {
+    internal var seriesList by observable(emptyList<ScatterSeries>())
+    internal var showGrid by observable(true)
+    internal var showAxisLabels by observable(true)
+    internal var axisColor by observable(Color(180, 180, 180, 1f))
+    internal var gridColor by observable(Color(220, 220, 220, 1f))
+    internal var labelFontSize by observable(11f)
+    internal var showLegend by observable(true)
+    internal var xAxisLabel by observable("")
+    internal var yAxisLabel by observable("")
+
+    fun data(vararg series: ScatterSeries) { seriesList = series.toList() }
+    fun data(list: List<ScatterSeries>) { seriesList = list }
+    fun showGrid(show: Boolean) { showGrid = show }
+    fun showAxisLabels(show: Boolean) { showAxisLabels = show }
+    fun axisColor(color: Color) { axisColor = color }
+    fun gridColor(color: Color) { gridColor = color }
+    fun labelFontSize(size: Float) { labelFontSize = size }
+    fun showLegend(show: Boolean) { showLegend = show }
+    fun xAxisLabel(text: String) { xAxisLabel = text }
+    fun yAxisLabel(text: String) { yAxisLabel = text }
+    fun size(w: Float, h: Float) { if (!w.isNaN()) width(w); if (!h.isNaN()) height(h) }
+}
+
+class ScatterChartEvent : ComposeEvent() {
+    internal var onPointClickHandler: ((seriesIndex: Int, pointIndex: Int, x: Float, y: Float) -> Unit)? = null
+    fun onPointClick(handler: (seriesIndex: Int, pointIndex: Int, x: Float, y: Float) -> Unit) {
+        onPointClickHandler = handler
+    }
+}
+
+class ScatterChartView : ComposeView<ScatterChartAttr, ScatterChartEvent>() {
+
+    private var lastPL = PADDING_LEFT
+    private var lastPT = PADDING_TOP
+    private var lastCW = 0f
+    private var lastCH = 0f
+    private var lastXMin = 0f
+    private var lastXRange = 1f
+    private var lastYMin = 0f
+    private var lastYRange = 1f
+
+    override fun createAttr() = ScatterChartAttr()
+    override fun createEvent() = ScatterChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { absolutePositionAllZero() }
+                event { click { params -> ctx.handleScatterClick(params) } }
+            }) { context, w, h ->
+                val a = ctx.attr
+                val allPts = a.seriesList.flatMap { it.points }
+                if (allPts.isEmpty()) return@Canvas
+
+                val legendH = if (a.showLegend) 24f else 0f
+                val pl = PADDING_LEFT
+                val pt = PADDING_TOP
+                val chartW = (w - pl - PADDING_RIGHT).coerceAtLeast(10f)
+                val chartH = (h - pt - PADDING_BOTTOM - legendH).coerceAtLeast(10f)
+
+                val xMin = allPts.minOf { it.x }
+                val xMax = allPts.maxOf { it.x }
+                val yMin = allPts.minOf { it.y }
+                val yMax = allPts.maxOf { it.y }
+                val xRange = if (abs(xMax - xMin) < 1e-6f) 1f else xMax - xMin
+                val yRange = if (abs(yMax - yMin) < 1e-6f) 1f else yMax - yMin
+
+                ctx.lastPL = pl; ctx.lastPT = pt
+                ctx.lastCW = chartW; ctx.lastCH = chartH
+                ctx.lastXMin = xMin; ctx.lastXRange = xRange
+                ctx.lastYMin = yMin; ctx.lastYRange = yRange
+
+                if (a.showGrid) {
+                    val gridLines = 4
+                    context.strokeStyle(a.gridColor)
+                    context.lineWidth(0.5f)
+                    for (i in 0..gridLines) {
+                        val gy = pt + chartH * i / gridLines
+                        context.beginPath()
+                        context.moveTo(pl, gy); context.lineTo(pl + chartW, gy)
+                        context.stroke()
+                        val gx = pl + chartW * i / gridLines
+                        context.beginPath()
+                        context.moveTo(gx, pt); context.lineTo(gx, pt + chartH)
+                        context.stroke()
+                    }
+                }
+
+                context.strokeStyle(a.axisColor)
+                context.lineWidth(1.5f)
+                context.beginPath()
+                context.moveTo(pl, pt)
+                context.lineTo(pl, pt + chartH)
+                context.lineTo(pl + chartW, pt + chartH)
+                context.stroke()
+
+                if (a.showAxisLabels) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(Color(100, 100, 100, 1f))
+                    val gridLines = 4
+                    for (i in 0..gridLines) {
+                        val xVal = xMin + xRange * i / gridLines
+                        context.fillText(xVal.fmt1(), pl + chartW * i / gridLines - 8f, pt + chartH + 14f)
+                        val yVal = yMax - yRange * i / gridLines
+                        context.fillText(yVal.fmt1(), 2f, pt + chartH * i / gridLines + 4f)
+                    }
+                }
+
+                a.seriesList.forEach { series ->
+                    series.points.forEach { point ->
+                        val px = pl + (point.x - xMin) / xRange * chartW
+                        val py = pt + (1f - (point.y - yMin) / yRange) * chartH
+                        val radius = point.size.coerceIn(3f, 30f)
+                        context.beginPath()
+                        context.arc(px, py, radius, 0f, 2f * PI.toFloat(), false)
+                        context.fillStyle(series.color)
+                        context.fill()
+                    }
+                }
+
+                if (a.showLegend && a.seriesList.isNotEmpty()) {
+                    val legendY = h - legendH + 6f
+                    val slotW = w / a.seriesList.size.coerceAtLeast(1)
+                    context.font(a.labelFontSize)
+                    a.seriesList.forEachIndexed { idx, s ->
+                        val lx = idx * slotW + 4f
+                        context.beginPath()
+                        context.arc(lx + 5f, legendY + 5f, 5f, 0f, 2f * PI.toFloat(), false)
+                        context.fillStyle(s.color)
+                        context.fill()
+                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillText(s.name.take(8), lx + 14f, legendY + 9f)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleScatterClick(params: ClickParams) {
+        val handler = event.onPointClickHandler ?: return
+        if (lastCW == 0f || lastCH == 0f) return
+        val a = attr
+        val clickX = lastXMin + (params.x - lastPL) / lastCW * lastXRange
+        val clickY = lastYMin + (1f - (params.y - lastPT) / lastCH) * lastYRange
+        var bestDist = Float.MAX_VALUE
+        var bestS = -1; var bestP = -1
+        a.seriesList.forEachIndexed { sIdx, series ->
+            series.points.forEachIndexed { pIdx, pt ->
+                val d = sqrt((pt.x - clickX) * (pt.x - clickX) + (pt.y - clickY) * (pt.y - clickY))
+                if (d < bestDist) { bestDist = d; bestS = sIdx; bestP = pIdx }
+            }
+        }
+        if (bestS >= 0) {
+            val p = a.seriesList[bestS].points[bestP]
+            handler(bestS, bestP, p.x, p.y)
+        }
+    }
+}
