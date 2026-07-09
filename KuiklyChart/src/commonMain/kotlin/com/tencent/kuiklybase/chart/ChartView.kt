@@ -2032,3 +2032,350 @@ class BoxplotChartView : ComposeView<BoxplotChartAttr, BoxplotChartEvent>() {
         event.onBoxClick?.invoke(a.boxes[idx])
     }
 }
+
+// ─── BubbleChart ─────────────────────────────────────────────────────────────
+
+fun ViewContainer<*, *>.BubbleChart(init: BubbleChartView.() -> Unit) {
+    addChild(BubbleChartView(), init)
+}
+
+data class BubbleData(
+    val x: Float,
+    val y: Float,
+    val r: Float,
+    val label: String = "",
+    val color: Color? = null,
+)
+
+class BubbleChartAttr : ComposeAttr() {
+    internal var series by observable(emptyList<BubbleData>())
+    internal var xAxisLabel by observable("")
+    internal var yAxisLabel by observable("")
+    internal var showLabels by observable(false)
+    internal var defaultColor by observable(Color(0xFF1677FFL))
+    internal var gridColor by observable(Color(0xFFDCDCDCL))
+    internal var axisColor by observable(Color(0xFFB4B4B4L))
+    internal var axisFontSize by observable(11f)
+    internal var maxRadius by observable(36f)
+    internal var fillAlpha by observable(0.55f)
+
+    fun points(list: List<BubbleData>) { series = list }
+    fun points(vararg p: BubbleData) { series = p.toList() }
+    fun xAxisLabel(s: String) { xAxisLabel = s }
+    fun yAxisLabel(s: String) { yAxisLabel = s }
+    fun showLabels(b: Boolean) { showLabels = b }
+    fun defaultColor(c: Color) { defaultColor = c }
+    fun maxRadius(r: Float) { maxRadius = r.coerceIn(8f, 80f) }
+    fun fillAlpha(a: Float) { fillAlpha = a.coerceIn(0.1f, 1f) }
+    fun size(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
+    }
+}
+
+class BubbleChartEvent : ComposeEvent() {
+    internal var onBubbleClick: ((BubbleData) -> Unit)? = null
+    fun onBubbleClick(action: (BubbleData) -> Unit) { onBubbleClick = action }
+}
+
+class BubbleChartView : ComposeView<BubbleChartAttr, BubbleChartEvent>() {
+    private var lastW = 0f
+    private var lastH = 0f
+    private var renderedPoints = emptyList<BubbleData>()
+    private var renderedX = emptyList<Float>()
+    private var renderedY = emptyList<Float>()
+    private var renderedR = emptyList<Float>()
+
+    override fun createAttr(): BubbleChartAttr = BubbleChartAttr()
+    override fun createEvent(): BubbleChartEvent = BubbleChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { allFill() }
+                event { click { params -> ctx.handleClick(params) } }
+            }) { context, w, h ->
+                ctx.lastW = w; ctx.lastH = h
+                val a = ctx.attr
+                val pts = a.series
+                if (pts.isEmpty()) return@Canvas
+
+                val padL = PADDING_LEFT + 4f
+                val padR = PADDING_RIGHT
+                val padT = PADDING_TOP
+                val padB = PADDING_BOTTOM + 4f
+                val chartW = w - padL - padR
+                val chartH = h - padT - padB
+
+                val xVals = pts.map { it.x }
+                val yVals = pts.map { it.y }
+                val rVals = pts.map { it.r }
+                val xMin = xVals.minOrNull() ?: 0f
+                val xMax = xVals.maxOrNull() ?: 1f
+                val yMin = yVals.minOrNull() ?: 0f
+                val yMax = yVals.maxOrNull() ?: 1f
+                val rMax = rVals.maxOrNull()?.coerceAtLeast(1f) ?: 1f
+                val xRange = (xMax - xMin).takeIf { it > 1e-6f } ?: 1f
+                val yRange = (yMax - yMin).takeIf { it > 1e-6f } ?: 1f
+                val xPad = xRange * 0.12f; val yPad = yRange * 0.12f
+
+                fun toSx(x: Float) = padL + (x - (xMin - xPad)) / (xRange + xPad * 2f) * chartW
+                fun toSy(y: Float) = padT + chartH - (y - (yMin - yPad)) / (yRange + yPad * 2f) * chartH
+
+                context.strokeStyle(a.gridColor); context.lineWidth(0.5f)
+                repeat(5) { i ->
+                    val gy = padT + chartH * i / 4f
+                    val gx = padL + chartW * i / 4f
+                    context.beginPath(); context.moveTo(padL, gy); context.lineTo(padL + chartW, gy); context.stroke()
+                    context.beginPath(); context.moveTo(gx, padT); context.lineTo(gx, padT + chartH); context.stroke()
+                }
+
+                context.strokeStyle(a.axisColor); context.lineWidth(1f)
+                context.beginPath()
+                context.moveTo(padL, padT); context.lineTo(padL, padT + chartH); context.lineTo(padL + chartW, padT + chartH)
+                context.stroke()
+
+                val cxList = mutableListOf<Float>()
+                val cyList = mutableListOf<Float>()
+                val crList = mutableListOf<Float>()
+                pts.forEach { p ->
+                    val cx = toSx(p.x); val cy = toSy(p.y)
+                    val scaledR = (p.r / rMax) * a.maxRadius
+                    cxList += cx; cyList += cy; crList += scaledR
+
+                    val baseColor = p.color ?: a.defaultColor
+                    val rgb = baseColor.hexColor
+                    val r = ((rgb shr 16) and 0xFF).toInt()
+                    val g = ((rgb shr 8) and 0xFF).toInt()
+                    val b = (rgb and 0xFF).toInt()
+                    val grad = context.createLinearGradient(cx - scaledR, cy - scaledR, cx + scaledR, cy + scaledR)
+                    grad.addColorStop(0f, Color(red255 = r, green255 = g, blue255 = b, alpha01 = a.fillAlpha))
+                    grad.addColorStop(1f, Color(red255 = r, green255 = g, blue255 = b, alpha01 = a.fillAlpha * 0.4f))
+                    context.fillStyle(grad)
+                    context.beginPath()
+                    context.arc(cx, cy, scaledR, 0f, 2f * PI.toFloat(), false)
+                    context.fill()
+
+                    context.strokeStyle(baseColor)
+                    context.lineWidth(1.5f)
+                    context.beginPath()
+                    context.arc(cx, cy, scaledR, 0f, 2f * PI.toFloat(), false)
+                    context.stroke()
+
+                    if (a.showLabels && p.label.isNotEmpty()) {
+                        context.font(a.axisFontSize)
+                        context.fillStyle(Color(0xFF505050L))
+                        context.textAlign(TextAlign.CENTER)
+                        context.fillText(p.label, cx, cy + a.axisFontSize * 0.35f)
+                        context.textAlign(TextAlign.LEFT)
+                    }
+                }
+                ctx.renderedPoints = pts
+                ctx.renderedX = cxList
+                ctx.renderedY = cyList
+                ctx.renderedR = crList
+
+                context.font(a.axisFontSize); context.fillStyle(Color(0xFF505050L))
+                repeat(5) { i ->
+                    val v = (yMin - yPad) + (yRange + yPad * 2f) * (4 - i) / 4f
+                    val gy = padT + chartH * i / 4f
+                    context.fillText(v.fmt1(), 2f, gy + a.axisFontSize * 0.35f)
+                }
+                repeat(5) { i ->
+                    val v = (xMin - xPad) + (xRange + xPad * 2f) * i / 4f
+                    val gx = padL + chartW * i / 4f
+                    context.fillText(v.fmt1(), gx - 8f, padT + chartH + 14f)
+                }
+            }
+        }
+    }
+
+    private fun handleClick(params: ClickParams) {
+        val pts = renderedPoints; if (pts.isEmpty()) return
+        for (i in pts.indices) {
+            val dx = params.x - renderedX[i]; val dy = params.y - renderedY[i]
+            if (sqrt(dx * dx + dy * dy) <= renderedR[i] + 4f) {
+                event.onBubbleClick?.invoke(pts[i]); return
+            }
+        }
+    }
+}
+
+// ─── SankeyChart ─────────────────────────────────────────────────────────────
+
+fun ViewContainer<*, *>.SankeyChart(init: SankeyChartView.() -> Unit) {
+    addChild(SankeyChartView(), init)
+}
+
+data class SankeyNode(val id: String, val label: String = "", val color: Color? = null)
+data class SankeyLink(val from: String, val to: String, val value: Float)
+
+class SankeyChartAttr : ComposeAttr() {
+    internal var nodes by observable(emptyList<SankeyNode>())
+    internal var links by observable(emptyList<SankeyLink>())
+    internal var nodeWidth by observable(20f)
+    internal var nodePadding by observable(16f)
+    internal var labelFontSize by observable(12f)
+    internal var defaultColors by observable(ChartTheme.Default)
+    internal var linkAlpha by observable(0.35f)
+    internal var showLabels by observable(true)
+
+    fun nodes(list: List<SankeyNode>) { nodes = list }
+    fun nodes(vararg n: SankeyNode) { nodes = n.toList() }
+    fun links(list: List<SankeyLink>) { links = list }
+    fun links(vararg l: SankeyLink) { links = l.toList() }
+    fun nodeWidth(w: Float) { nodeWidth = w.coerceIn(8f, 40f) }
+    fun nodePadding(p: Float) { nodePadding = p.coerceAtLeast(4f) }
+    fun labelFontSize(sz: Float) { labelFontSize = sz }
+    fun palette(colors: List<Color>) { defaultColors = colors }
+    fun linkAlpha(a: Float) { linkAlpha = a.coerceIn(0.1f, 0.9f) }
+    fun showLabels(b: Boolean) { showLabels = b }
+    fun size(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
+    }
+}
+
+class SankeyChartEvent : ComposeEvent() {
+    internal var onNodeClick: ((SankeyNode) -> Unit)? = null
+    fun onNodeClick(action: (SankeyNode) -> Unit) { onNodeClick = action }
+}
+
+class SankeyChartView : ComposeView<SankeyChartAttr, SankeyChartEvent>() {
+
+    override fun createAttr(): SankeyChartAttr = SankeyChartAttr()
+    override fun createEvent(): SankeyChartEvent = SankeyChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { allFill() } }) { context, w, h ->
+                val a = ctx.attr
+                val nodes = a.nodes; val links = a.links
+                if (nodes.isEmpty()) return@Canvas
+
+                val padL = PADDING_LEFT; val padR = PADDING_RIGHT
+                val padT = PADDING_TOP; val padB = PADDING_BOTTOM
+                val chartW = w - padL - padR; val chartH = h - padT - padB
+
+                // Assign each node to a column based on BFS-like depth
+                val colMap = mutableMapOf<String, Int>()
+                val queue = ArrayDeque<String>()
+                val sources = nodes.map { it.id }.filter { id -> links.none { it.to == id } }
+                sources.forEach { colMap[it] = 0; queue.add(it) }
+                while (queue.isNotEmpty()) {
+                    val cur = queue.removeFirst()
+                    val col = colMap[cur] ?: 0
+                    links.filter { it.from == cur }.forEach { lnk ->
+                        if (!colMap.containsKey(lnk.to)) {
+                            colMap[lnk.to] = col + 1
+                            queue.add(lnk.to)
+                        } else {
+                            colMap[lnk.to] = maxOf(colMap[lnk.to]!!, col + 1)
+                        }
+                    }
+                }
+                nodes.forEach { n -> colMap.putIfAbsent(n.id, 0) }
+                val maxCol = colMap.values.maxOrNull() ?: 0
+                val colCount = maxCol + 1
+
+                // Total value per node
+                val totalIn = mutableMapOf<String, Float>()
+                val totalOut = mutableMapOf<String, Float>()
+                nodes.forEach { n -> totalIn[n.id] = 0f; totalOut[n.id] = 0f }
+                links.forEach { l ->
+                    totalIn[l.to] = (totalIn[l.to] ?: 0f) + l.value
+                    totalOut[l.from] = (totalOut[l.from] ?: 0f) + l.value
+                }
+                val nodeValue = nodes.associate { n ->
+                    n.id to maxOf(totalIn[n.id] ?: 0f, totalOut[n.id] ?: 0f).coerceAtLeast(1f)
+                }
+
+                // Compute column totals for scaling
+                val colNodes = (0..maxCol).map { col -> nodes.filter { colMap[it.id] == col } }
+                val colTotals = colNodes.map { colNs -> colNs.sumOf { (nodeValue[it.id] ?: 1f).toDouble() }.toFloat() }
+                val maxColTotal = colTotals.maxOrNull()?.coerceAtLeast(1f) ?: 1f
+
+                // Assign pixel heights and Y positions per column
+                val nodeRect = mutableMapOf<String, FloatArray>() // [x, y, w, h]
+                val nw = a.nodeWidth
+                val colXStep = if (colCount <= 1) chartW else chartW / (colCount - 1).toFloat()
+
+                colNodes.forEachIndexed { colIdx, colNs ->
+                    val colTotal = colTotals[colIdx].coerceAtLeast(1f)
+                    val totalPixels = chartH - a.nodePadding * (colNs.size - 1)
+                    var curY = padT
+                    colNs.forEach { n ->
+                        val ph = ((nodeValue[n.id] ?: 1f) / colTotal * totalPixels).coerceAtLeast(4f)
+                        val nx = padL + colIdx * colXStep - nw / 2f
+                        nodeRect[n.id] = floatArrayOf(nx, curY, nw, ph)
+                        curY += ph + a.nodePadding
+                    }
+                }
+
+                // Draw links as bezier curves
+                val linkOutY = mutableMapOf<String, Float>()
+                val linkInY = mutableMapOf<String, Float>()
+                nodeRect.forEach { (id, r) -> linkOutY[id] = r[1]; linkInY[id] = r[1] }
+
+                links.forEach { lnk ->
+                    val fromR = nodeRect[lnk.from] ?: return@forEach
+                    val toR = nodeRect[lnk.to] ?: return@forEach
+                    val fromNode = nodes.firstOrNull { it.id == lnk.from } ?: return@forEach
+                    val colorIdx = nodes.indexOf(fromNode).coerceIn(0, a.defaultColors.size - 1)
+                    val baseColor = fromNode.color ?: a.defaultColors[colorIdx % a.defaultColors.size]
+
+                    val fromTotal = totalOut[lnk.from]?.coerceAtLeast(1f) ?: 1f
+                    val pxH = (lnk.value / fromTotal * fromR[3]).coerceAtLeast(1f)
+                    val x0 = fromR[0] + nw; val y0 = linkOutY[lnk.from] ?: fromR[1]
+                    val x1 = toR[0]; val y1 = linkInY[lnk.to] ?: toR[1]
+                    linkOutY[lnk.from] = y0 + pxH
+                    linkInY[lnk.to] = y1 + pxH
+
+                    val rgb = baseColor.hexColor
+                    val r = ((rgb shr 16) and 0xFF).toInt()
+                    val g = ((rgb shr 8) and 0xFF).toInt()
+                    val b = (rgb and 0xFF).toInt()
+                    val grad = context.createLinearGradient(x0, 0f, x1, 0f)
+                    grad.addColorStop(0f, Color(red255 = r, green255 = g, blue255 = b, alpha01 = a.linkAlpha))
+                    grad.addColorStop(1f, Color(red255 = r, green255 = g, blue255 = b, alpha01 = a.linkAlpha * 0.5f))
+                    context.fillStyle(grad)
+                    context.beginPath()
+                    context.moveTo(x0, y0)
+                    val cpX = (x0 + x1) / 2f
+                    context.bezierCurveTo(cpX, y0, cpX, y1, x1, y1)
+                    context.lineTo(x1, y1 + pxH)
+                    context.bezierCurveTo(cpX, y1 + pxH, cpX, y0 + pxH, x0, y0 + pxH)
+                    context.closePath()
+                    context.fill()
+                }
+
+                // Draw nodes
+                nodes.forEachIndexed { idx, n ->
+                    val r = nodeRect[n.id] ?: return@forEachIndexed
+                    val baseColor = n.color ?: a.defaultColors[idx % a.defaultColors.size]
+                    val rgb = baseColor.hexColor
+                    val ri = ((rgb shr 16) and 0xFF).toInt()
+                    val gi = ((rgb shr 8) and 0xFF).toInt()
+                    val bi = (rgb and 0xFF).toInt()
+                    val grad = context.createLinearGradient(r[0], r[1], r[0], r[1] + r[3])
+                    grad.addColorStop(0f, Color(red255 = ri, green255 = gi, blue255 = bi, alpha01 = 1f))
+                    grad.addColorStop(1f, Color(red255 = ri, green255 = gi, blue255 = bi, alpha01 = 0.75f))
+                    context.fillStyle(grad)
+                    context.fillRect(r[0], r[1], r[2], r[3])
+
+                    if (a.showLabels) {
+                        val lbl = if (n.label.isNotEmpty()) n.label else n.id
+                        val col = colMap[n.id] ?: 0
+                        context.font(a.labelFontSize)
+                        context.fillStyle(Color(0xFF282828L))
+                        val lx = if (col == maxCol) r[0] - 4f - lbl.length * a.labelFontSize * 0.6f
+                                  else r[0] + nw + 4f
+                        context.fillText(lbl, lx, r[1] + r[3] / 2f + a.labelFontSize * 0.35f)
+                    }
+                }
+            }
+        }
+    }
+}
