@@ -39,6 +39,9 @@ import com.tencent.kuiklybase.chart.BubbleData
 import com.tencent.kuiklybase.chart.SankeyChart
 import com.tencent.kuiklybase.chart.SankeyNode
 import com.tencent.kuiklybase.chart.SankeyLink
+import com.tencent.kuiklybase.chart.CalendarDay
+import com.tencent.kuiklybase.chart.CalendarHeatmap
+import com.tencent.kuiklybase.chart.CalendarColorScale
 import com.tencent.kuiklybase.chart.NightingaleRoseChart
 import com.tencent.kuiklybase.chart.RoseSlice
 
@@ -937,6 +940,69 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                         fontSize(12f)
                         color(Color(0xFF1677FFL))
                         margin(left = 16f, top = 4f, bottom = 32f)
+                    }
+                }
+
+                // ── CalendarHeatmap ─────────────────────────────────────────
+                View {
+                    attr { marginLeft(16f); marginTop(16f); marginBottom(4f) }
+                    Text {
+                        attr { text("日历热力图 - CalendarHeatmap"); fontSize(14f); color(Color(0xFF333333L)) }
+                    }
+                }
+                View {
+                    attr { marginLeft(16f); marginRight(16f); marginBottom(8f) }
+                    CalendarHeatmap {
+                        attr {
+                            // Generate 6 months of synthetic activity data
+                            days(buildList {
+                                val baseYear = 2025
+                                val months = listOf(
+                                    Pair(7, 31), Pair(8, 31), Pair(9, 30),
+                                    Pair(10, 31), Pair(11, 30), Pair(12, 31)
+                                )
+                                months.forEach { (m, days) ->
+                                    for (d in 1..days) {
+                                        val value = when {
+                                            (d + m) % 7 == 0 -> 0
+                                            (d + m) % 5 == 0 -> 15 + (d % 5) * 3
+                                            (d + m) % 3 == 0 -> 8 + d % 4
+                                            d % 2 == 0       -> 3 + m % 3
+                                            else             -> 0
+                                        }
+                                        add(CalendarDay(baseYear, m, d, value))
+                                    }
+                                }
+                            })
+                            weeks(27)
+                            colorScale(CalendarColorScale.GREEN)
+                            cellSize(14f)
+                            cellSpacing(2f)
+                        }
+                    }
+                }
+                View {
+                    attr { marginLeft(16f); marginTop(8f); marginBottom(8f) }
+                    Text {
+                        attr { text("蓝色主题"); fontSize(12f); color(Color(0xFF999999L)) }
+                    }
+                }
+                View {
+                    attr { marginLeft(16f); marginRight(16f); marginBottom(32f) }
+                    CalendarHeatmap {
+                        attr {
+                            days(buildList {
+                                for (d in 1..90) {
+                                    val m = when { d <= 31 -> 1; d <= 59 -> 2; else -> 3 }
+                                    val day = when { d <= 31 -> d; d <= 59 -> d - 31; else -> d - 59 }
+                                    val value = if (d % 3 == 0) (d % 20) + 1 else 0
+                                    add(CalendarDay(2026, m, day, value))
+                                }
+                            })
+                            weeks(14)
+                            colorScale(CalendarColorScale.BLUE)
+                            cellSize(14f)
+                        }
                     }
                 }
             }

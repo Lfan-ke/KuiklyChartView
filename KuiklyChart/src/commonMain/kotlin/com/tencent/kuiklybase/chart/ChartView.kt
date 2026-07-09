@@ -23,12 +23,17 @@ import com.tencent.kuikly.core.base.ViewBuilder
 import com.tencent.kuikly.core.base.ViewContainer
 import com.tencent.kuikly.core.base.event.ClickParams
 import com.tencent.kuikly.core.reactive.handler.observable
+import com.tencent.kuikly.core.base.Animation
+import com.tencent.kuikly.core.views.Canvas
 import com.tencent.kuikly.core.views.CanvasLinearGradient
 import com.tencent.kuikly.core.views.TextAlign
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -2541,4 +2546,237 @@ class NightingaleRoseView : ComposeView<NightingaleRoseAttr, NightingaleRoseEven
             }
         }
     }
+}
+
+// =============================================================================
+// CalendarHeatmap - GitHub-style contribution calendar
+// =============================================================================
+
+/**
+ * A single day entry for [CalendarHeatmapView].
+ *
+ * @param year   4-digit year
+ * @param month  1-based month (1–12)
+ * @param day    1-based day of month
+ * @param value  Activity count; 0 = no activity
+ */
+data class CalendarDay(val year: Int, val month: Int, val day: Int, val value: Int)
+
+/**
+ * Built-in color scales for the contribution heatmap.
+ * Each list has 5 entries: [empty, level1, level2, level3, level4]
+ */
+enum class CalendarColorScale {
+    /** GitHub classic green scale. */
+    GREEN,
+    /** Blue intensity scale (Ant Design Charts). */
+    BLUE,
+    /** Orange warmth scale. */
+    ORANGE,
+    /** Purple energy scale. */
+    PURPLE,
+}
+
+class CalendarHeatmapAttr : ComposeAttr() {
+
+    internal var days by observable(emptyList<CalendarDay>())
+    internal var weeks by observable(53)
+    internal var colorScale by observable(CalendarColorScale.GREEN)
+    internal var customColors by observable(emptyList<Color>())
+    internal var cellSize by observable(12f)
+    internal var cellSpacing by observable(2f)
+    internal var showMonthLabels by observable(true)
+    internal var showDayLabels by observable(true)
+    internal var labelColor by observable(Color(0xFF8C8C8CL))
+    internal var labelFontSize by observable(10f)
+    internal var emptyColor by observable(Color(0xFFEBEDF0L))
+    internal var borderRadius by observable(2f)
+
+    fun days(list: List<CalendarDay>) { days = list }
+    fun days(vararg d: CalendarDay) { days = d.toList() }
+    fun weeks(w: Int) { weeks = w.coerceIn(1, 53) }
+    fun colorScale(s: CalendarColorScale) { colorScale = s }
+    fun customColors(vararg c: Color) { customColors = c.toList() }
+    fun cellSize(s: Float) { cellSize = s.coerceIn(6f, 32f) }
+    fun cellSpacing(s: Float) { cellSpacing = s.coerceIn(0f, 8f) }
+    fun showMonthLabels(show: Boolean) { showMonthLabels = show }
+    fun showDayLabels(show: Boolean) { showDayLabels = show }
+    fun labelColor(c: Color) { labelColor = c }
+    fun labelFontSize(s: Float) { labelFontSize = s }
+    fun emptyColor(c: Color) { emptyColor = c }
+    fun borderRadius(r: Float) { borderRadius = r }
+
+    internal fun resolveColors(): List<Color> {
+        if (customColors.size >= 5) return customColors.take(5)
+        return when (colorScale) {
+            CalendarColorScale.GREEN  -> listOf(
+                Color(0xFFEBEDF0L), Color(0xFF9BE9A8L), Color(0xFF40C463L),
+                Color(0xFF30A14EL), Color(0xFF216E39L),
+            )
+            CalendarColorScale.BLUE   -> listOf(
+                Color(0xFFEBEDF0L), Color(0xFFBAE7FFL), Color(0xFF69C0FFL),
+                Color(0xFF1677FFL), Color(0xFF0050B3L),
+            )
+            CalendarColorScale.ORANGE -> listOf(
+                Color(0xFFEBEDF0L), Color(0xFFFFD8B8L), Color(0xFFFFAD66L),
+                Color(0xFFFA8C16L), Color(0xFFD46B08L),
+            )
+            CalendarColorScale.PURPLE -> listOf(
+                Color(0xFFEBEDF0L), Color(0xFFD3ADF7L), Color(0xFF9254DEL),
+                Color(0xFF722ED1L), Color(0xFF391085L),
+            )
+        }
+    }
+}
+
+class CalendarHeatmapEvent : ComposeEvent() {
+    var onDayClick: ((CalendarDay) -> Unit)? = null
+}
+
+class CalendarHeatmapView : ComposeView<CalendarHeatmapAttr, CalendarHeatmapEvent>() {
+
+    override fun createAttr(): CalendarHeatmapAttr = CalendarHeatmapAttr()
+    override fun createEvent(): CalendarHeatmapEvent = CalendarHeatmapEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            val a = ctx.attr
+            val cellStep = a.cellSize + a.cellSpacing
+            val dayLabelW = if (a.showDayLabels) 24f else 0f
+            val monthLabelH = if (a.showMonthLabels) 18f else 0f
+            val canvasW = dayLabelW + a.weeks * cellStep
+            val canvasH = monthLabelH + 7 * cellStep
+
+            Canvas({ attr { width(canvasW); height(canvasH); overflow(false) } }) { context, width, height ->
+                if (a.days.isEmpty()) return@Canvas
+
+                val colors = a.resolveColors()
+                val maxVal = a.days.maxOf { it.value }.coerceAtLeast(1)
+
+                // Build lookup: "YYYY-MM-DD" -> CalendarDay
+                val lookup = a.days.associateBy { "${it.year}-${it.month.toString().padStart(2,'0')}-${it.day.toString().padStart(2,'0')}" }
+
+                // Find the start date (earliest day in data or first day of current view)
+                val firstDay = a.days.minByOrNull { it.year * 10000 + it.month * 100 + it.day }
+                    ?: return@Canvas
+
+                // Day-of-week offset for first day (we approximate: day 0=Sun, 1=Mon...6=Sat)
+                // Use Zeller's formula to get weekday for firstDay
+                val fy = firstDay.year
+                val fm = firstDay.month
+                val fd = firstDay.day
+                val startDow = weekday(fy, fm, fd)  // 0=Sun
+
+                // Month labels
+                if (a.showMonthLabels) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(a.labelColor)
+                    context.textAlign(TextAlign.LEFT)
+                    val monthNames = listOf("", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                    var col = 0
+                    var totalDays = startDow
+                    var lastMonth = -1
+                    while (col < a.weeks) {
+                        val dayInWeek = 0  // check first day of each column
+                        val daysFromStart = col * 7 - startDow
+                        if (daysFromStart >= 0) {
+                            // Approximate month for this column
+                            val approxMonth = monthFromOffset(firstDay, daysFromStart)
+                            if (approxMonth != lastMonth) {
+                                lastMonth = approxMonth
+                                val x = dayLabelW + col * cellStep
+                                context.fillText(monthNames.getOrElse(approxMonth) { "" }, x, a.labelFontSize)
+                            }
+                        }
+                        col++
+                    }
+                }
+
+                // Day labels (Mon, Wed, Fri)
+                if (a.showDayLabels) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(a.labelColor)
+                    context.textAlign(TextAlign.RIGHT)
+                    val dayLabels = listOf("", "Mon", "", "Wed", "", "Fri", "")
+                    for (dow in 0..6) {
+                        if (dayLabels[dow].isEmpty()) continue
+                        val y = monthLabelH + dow * cellStep + a.cellSize * 0.75f
+                        context.fillText(dayLabels[dow], dayLabelW - 2f, y)
+                    }
+                }
+
+                // Draw cells
+                for (col in 0 until a.weeks) {
+                    for (row in 0..6) {
+                        val totalOffset = col * 7 + row - startDow
+                        if (totalOffset < 0) continue
+                        val dayKey = dayKeyFromOffset(firstDay, totalOffset)
+                        val dayData = lookup[dayKey]
+                        val value = dayData?.value ?: 0
+                        val level = when {
+                            value <= 0            -> 0
+                            value <= maxVal / 4   -> 1
+                            value <= maxVal / 2   -> 2
+                            value <= maxVal * 3/4 -> 3
+                            else                  -> 4
+                        }
+                        val color = colors[level]
+                        val x = dayLabelW + col * cellStep
+                        val y = monthLabelH + row * cellStep
+                        context.fillStyle(color)
+                        context.fillRoundRect(x, y, a.cellSize, a.cellSize, a.borderRadius)
+                    }
+                }
+            }
+        }
+    }
+
+    // Zeller's congruence approximation for day of week (0=Sun, 1=Mon ... 6=Sat)
+    private fun weekday(y: Int, m: Int, d: Int): Int {
+        val ay = if (m < 3) y - 1 else y
+        val am = if (m < 3) m + 12 else m
+        val k = ay % 100
+        val j = ay / 100
+        val h = (d + (13 * (am + 1)) / 5 + k + k / 4 + j / 4 - 2 * j) % 7
+        return ((h + 5) % 7 + 1) % 7  // 0=Sun
+    }
+
+    private fun monthFromOffset(base: CalendarDay, offset: Int): Int {
+        // Simplified: assume 30-day months for label placement estimation
+        val totalDay = base.month * 30 + base.day + offset
+        return ((totalDay / 30) % 12).coerceIn(1, 12)
+    }
+
+    private fun dayKeyFromOffset(base: CalendarDay, offset: Int): String {
+        // Simple implementation: convert to day-number, add offset, convert back
+        var totalDays = daysFromEpoch(base.year, base.month, base.day) + offset
+        val (y, m, d) = epochToDmy(totalDays)
+        return "$y-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}"
+    }
+
+    private fun daysFromEpoch(y: Int, m: Int, d: Int): Int {
+        val yy = if (m <= 2) y - 1 else y
+        val mm = if (m <= 2) m + 12 else m
+        return 365 * yy + yy / 4 - yy / 100 + yy / 400 + (153 * mm + 8) / 5 + d
+    }
+
+    private fun epochToDmy(n: Int): Triple<Int, Int, Int> {
+        var z = n - 1
+        val era = z / 146097
+        z -= era * 146097
+        val yoe = (z - z / 1460 + z / 36524 - z / 146096) / 365
+        val y = yoe + era * 400
+        val doy = z - (365 * yoe + yoe / 4 - yoe / 100)
+        val mp = (5 * doy + 2) / 153
+        val d = doy - (153 * mp + 2) / 5 + 1
+        val m = if (mp < 10) mp + 3 else mp - 9
+        val yr = if (m <= 2) y + 1 else y
+        return Triple(yr, m, d)
+    }
+}
+
+fun ViewContainer<*, *>.CalendarHeatmap(init: CalendarHeatmapView.() -> Unit) {
+    addChild(CalendarHeatmapView(), init)
 }
