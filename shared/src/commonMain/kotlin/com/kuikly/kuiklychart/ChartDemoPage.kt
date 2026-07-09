@@ -28,6 +28,10 @@ import com.tencent.kuiklybase.chart.WaterfallBar
 import com.tencent.kuiklybase.chart.WaterfallBarType
 import com.tencent.kuiklybase.chart.CandlestickChart
 import com.tencent.kuiklybase.chart.CandleStick
+import com.tencent.kuiklybase.chart.HeatmapChart
+import com.tencent.kuiklybase.chart.HeatmapCell
+import com.tencent.kuiklybase.chart.TreemapChart
+import com.tencent.kuiklybase.chart.TreemapNode
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -37,6 +41,8 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
     private var lastScatterClick by observable("")
     private var lastFunnelClick by observable("")
     private var lastCandleClick by observable("")
+    private var lastHeatmapClick by observable("")
+    private var lastTreemapClick by observable("")
     private var gaugeValue by observable(72f)
 
     override fun body(): ViewBuilder {
@@ -623,6 +629,107 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                 Text {
                     attr {
                         text(ctx.lastCandleClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 16f)
+                    }
+                }
+
+                // Heatmap Chart section
+                Text {
+                    attr {
+                        text("热力图 - HeatmapChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(120f)
+                        margin(left = 16f, right = 16f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    HeatmapChart {
+                        attr {
+                            size(Float.NaN, 120f)
+                            cols(7)
+                            rows(4)
+                            cellPadding(4f)
+                            cellRadius(3f)
+                            cells(
+                                HeatmapCell(0, 0, 2f), HeatmapCell(1, 0, 0f), HeatmapCell(2, 0, 5f),
+                                HeatmapCell(3, 0, 8f), HeatmapCell(4, 0, 3f), HeatmapCell(5, 0, 6f),
+                                HeatmapCell(6, 0, 0f),
+                                HeatmapCell(0, 1, 4f), HeatmapCell(1, 1, 9f), HeatmapCell(2, 1, 7f),
+                                HeatmapCell(3, 1, 2f), HeatmapCell(4, 1, 10f), HeatmapCell(5, 1, 5f),
+                                HeatmapCell(6, 1, 1f),
+                                HeatmapCell(0, 2, 0f), HeatmapCell(1, 2, 3f), HeatmapCell(2, 2, 8f),
+                                HeatmapCell(3, 2, 6f), HeatmapCell(4, 2, 4f), HeatmapCell(5, 2, 9f),
+                                HeatmapCell(6, 2, 7f),
+                                HeatmapCell(0, 3, 1f), HeatmapCell(1, 3, 5f), HeatmapCell(2, 3, 0f),
+                                HeatmapCell(3, 3, 3f), HeatmapCell(4, 3, 7f), HeatmapCell(5, 3, 2f),
+                                HeatmapCell(6, 3, 4f),
+                            )
+                        }
+                        event {
+                            onCellClick { cell ->
+                                ctx.lastHeatmapClick = "点击: (${cell.col}, ${cell.row}) 值=${cell.value.toInt()}"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastHeatmapClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 16f)
+                    }
+                }
+
+                // Treemap Chart section
+                Text {
+                    attr {
+                        text("矩形树图 - TreemapChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(200f)
+                        margin(left = 16f, right = 16f, bottom = 32f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    TreemapChart {
+                        attr {
+                            size(Float.NaN, 200f)
+                            padding(3f)
+                            labelFontSize(12f)
+                            showValues(true)
+                            nodes(
+                                TreemapNode("Apple", 3000f, Color(0xFF555555L)),
+                                TreemapNode("MSFT", 2800f, Color(0xFF007AE0L)),
+                                TreemapNode("Google", 2200f, Color(0xFF4285F4L)),
+                                TreemapNode("Amazon", 1800f, Color(0xFFFF9900L)),
+                                TreemapNode("Meta", 1200f, Color(0xFF1877F2L)),
+                                TreemapNode("Netflix", 300f, Color(0xFFE50914L)),
+                            )
+                        }
+                        event {
+                            onNodeClick { node ->
+                                ctx.lastTreemapClick = "点击: ${node.label} 市值=${node.value.toInt()}B"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastTreemapClick)
                         fontSize(12f)
                         color(Color(0xFF1677FFL))
                         margin(left = 16f, top = 4f, bottom = 16f)

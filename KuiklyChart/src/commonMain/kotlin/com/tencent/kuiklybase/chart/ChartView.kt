@@ -1527,3 +1527,258 @@ class CandlestickChartView : ComposeView<CandlestickChartAttr, CandlestickChartE
         }
     }
 }
+
+fun ViewContainer<*, *>.HeatmapChart(init: HeatmapChartView.() -> Unit) {
+    addChild(HeatmapChartView(), init)
+}
+
+data class HeatmapCell(
+    val col: Int,
+    val row: Int,
+    val value: Float,
+    val label: String = "",
+)
+
+class HeatmapChartAttr : ComposeAttr() {
+    internal var cells by observable(emptyList<HeatmapCell>())
+    internal var cols by observable(7)
+    internal var rows by observable(4)
+    internal var minColor by observable(Color(0xFFEBEDF0L))
+    internal var maxColor by observable(Color(0xFF216E39L))
+    internal var emptyColor by observable(Color(0xFFEBEDF0L))
+    internal var cellPadding by observable(3f)
+    internal var cellRadius by observable(2f)
+    internal var showValues by observable(false)
+    internal var axisFontSize by observable(10f)
+
+    fun cells(vararg c: HeatmapCell) { cells = c.toList() }
+    fun cells(list: List<HeatmapCell>) { cells = list }
+    fun cols(n: Int) { cols = n.coerceAtLeast(1) }
+    fun rows(n: Int) { rows = n.coerceAtLeast(1) }
+    fun minColor(c: Color) { minColor = c }
+    fun maxColor(c: Color) { maxColor = c }
+    fun emptyColor(c: Color) { emptyColor = c }
+    fun cellPadding(p: Float) { cellPadding = p.coerceAtLeast(0f) }
+    fun cellRadius(r: Float) { cellRadius = r.coerceAtLeast(0f) }
+    fun showValues(show: Boolean) { showValues = show }
+    fun axisFontSize(sz: Float) { axisFontSize = sz.coerceAtLeast(6f) }
+}
+
+class HeatmapChartEvent : ComposeEvent() {
+    internal var onCellClick: ((HeatmapCell) -> Unit)? = null
+    fun onCellClick(action: (HeatmapCell) -> Unit) { onCellClick = action }
+}
+
+class HeatmapChartView : ComposeView<HeatmapChartAttr, HeatmapChartEvent>() {
+    private var lastW = 0f
+    private var lastH = 0f
+
+    override fun createAttr(): HeatmapChartAttr = HeatmapChartAttr()
+    override fun createEvent(): HeatmapChartEvent = HeatmapChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { allFill() }
+                event { click { params -> ctx.handleCellClick(params) } }
+            }) { context, w, h ->
+                ctx.lastW = w
+                ctx.lastH = h
+                val a = ctx.attr
+                if (a.cols <= 0 || a.rows <= 0) return@Canvas
+                val cellW = (w - a.cellPadding * (a.cols + 1)) / a.cols
+                val cellH = (h - a.cellPadding * (a.rows + 1)) / a.rows
+                if (cellW <= 0f || cellH <= 0f) return@Canvas
+                val maxVal = a.cells.maxOfOrNull { it.value }?.takeIf { it > 0f } ?: 1f
+                val cellMap = a.cells.associateBy { it.col to it.row }
+                val r = a.cellRadius.coerceAtMost(minOf(cellW, cellH) / 2f)
+
+                val drawCell = { x: Float, y: Float ->
+                    if (r <= 0f) {
+                        context.fillRect(x, y, cellW, cellH)
+                    } else {
+                        context.beginPath()
+                        context.moveTo(x + r, y)
+                        context.lineTo(x + cellW - r, y)
+                        context.arc(x + cellW - r, y + r, r, -PI.toFloat() / 2f, 0f, false)
+                        context.lineTo(x + cellW, y + cellH - r)
+                        context.arc(x + cellW - r, y + cellH - r, r, 0f, PI.toFloat() / 2f, false)
+                        context.lineTo(x + r, y + cellH)
+                        context.arc(x + r, y + cellH - r, r, PI.toFloat() / 2f, PI.toFloat(), false)
+                        context.lineTo(x, y + r)
+                        context.arc(x + r, y + r, r, PI.toFloat(), PI.toFloat() * 3f / 2f, false)
+                        context.closePath()
+                        context.fill()
+                    }
+                }
+
+                repeat(a.rows) { row ->
+                    repeat(a.cols) { col ->
+                        val cx = a.cellPadding + col * (cellW + a.cellPadding)
+                        val cy = a.cellPadding + row * (cellH + a.cellPadding)
+                        val cell = cellMap[col to row]
+                        val color = if (cell == null || cell.value <= 0f) a.emptyColor
+                                    else ctx.lerpColor(a.minColor, a.maxColor, cell.value / maxVal)
+                        context.fillStyle(color)
+                        drawCell(cx, cy)
+                        if (a.showValues && cell != null && cell.value > 0f) {
+                            context.fillStyle(Color.WHITE)
+                            context.font(a.axisFontSize)
+                            val txt = "${cell.value.toInt()}"
+                            context.fillText(
+                                txt,
+                                cx + cellW / 2f - txt.length * a.axisFontSize * 0.3f,
+                                cy + cellH / 2f + a.axisFontSize * 0.35f,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleCellClick(params: ClickParams) {
+        val a = attr
+        if (lastW <= 0f || lastH <= 0f) return
+        val cellW = (lastW - a.cellPadding * (a.cols + 1)) / a.cols
+        val cellH = (lastH - a.cellPadding * (a.rows + 1)) / a.rows
+        if (cellW <= 0f || cellH <= 0f) return
+        val col = ((params.x - a.cellPadding) / (cellW + a.cellPadding)).toInt().coerceIn(0, a.cols - 1)
+        val row = ((params.y - a.cellPadding) / (cellH + a.cellPadding)).toInt().coerceIn(0, a.rows - 1)
+        a.cells.firstOrNull { it.col == col && it.row == row }?.let { event.onCellClick?.invoke(it) }
+    }
+
+    private fun lerpColor(from: Color, to: Color, t: Float): Color {
+        val tc = t.coerceIn(0f, 1f)
+        val fh = from.hexColor
+        val th = to.hexColor
+        fun chan(shift: Int): Int {
+            val fc = ((fh shr shift) and 0xFFL).toInt()
+            val tc2 = ((th shr shift) and 0xFFL).toInt()
+            return fc + ((tc2 - fc) * tc).toInt()
+        }
+        return Color(red255 = chan(16), green255 = chan(8), blue255 = chan(0), alpha01 = 1f)
+    }
+}
+
+fun ViewContainer<*, *>.TreemapChart(init: TreemapChartView.() -> Unit) {
+    addChild(TreemapChartView(), init)
+}
+
+data class TreemapNode(
+    val label: String,
+    val value: Float,
+    val color: Color,
+    val children: List<TreemapNode> = emptyList(),
+)
+
+class TreemapChartAttr : ComposeAttr() {
+    internal var nodes by observable(emptyList<TreemapNode>())
+    internal var padding by observable(2f)
+    internal var labelFontSize by observable(12f)
+    internal var showValues by observable(true)
+
+    fun nodes(vararg n: TreemapNode) { nodes = n.toList() }
+    fun nodes(list: List<TreemapNode>) { nodes = list }
+    fun padding(p: Float) { padding = p.coerceAtLeast(0f) }
+    fun labelFontSize(sz: Float) { labelFontSize = sz.coerceAtLeast(6f) }
+    fun showValues(show: Boolean) { showValues = show }
+}
+
+class TreemapChartEvent : ComposeEvent() {
+    internal var onNodeClick: ((TreemapNode) -> Unit)? = null
+    fun onNodeClick(action: (TreemapNode) -> Unit) { onNodeClick = action }
+}
+
+private data class TreemapRect(
+    val node: TreemapNode,
+    val x: Float,
+    val y: Float,
+    val w: Float,
+    val h: Float,
+)
+
+class TreemapChartView : ComposeView<TreemapChartAttr, TreemapChartEvent>() {
+    private var lastLayout = emptyList<TreemapRect>()
+
+    override fun createAttr(): TreemapChartAttr = TreemapChartAttr()
+    override fun createEvent(): TreemapChartEvent = TreemapChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { allFill() }
+                event { click { params -> ctx.handleNodeClick(params) } }
+            }) { context, w, h ->
+                val a = ctx.attr
+                if (a.nodes.isEmpty()) return@Canvas
+                val sorted = a.nodes.sortedByDescending { it.value }
+                val layout = ctx.squarify(sorted, 0f, 0f, w, h)
+                ctx.lastLayout = layout
+                layout.forEach { rect ->
+                    val p = a.padding / 2f
+                    val dx = rect.x + p
+                    val dy = rect.y + p
+                    val dw = (rect.w - a.padding).coerceAtLeast(0f)
+                    val dh = (rect.h - a.padding).coerceAtLeast(0f)
+                    if (dw <= 0f || dh <= 0f) return@forEach
+                    context.fillStyle(rect.node.color)
+                    context.fillRect(dx, dy, dw, dh)
+                    if (dw >= 32f && dh >= 20f) {
+                        val labelY = if (a.showValues && dh >= 36f) dy + dh / 2f - 4f
+                                     else dy + dh / 2f + a.labelFontSize * 0.35f
+                        context.fillStyle(Color.WHITE)
+                        context.font(a.labelFontSize)
+                        val lbl = rect.node.label
+                        context.fillText(
+                            lbl,
+                            dx + dw / 2f - lbl.length * a.labelFontSize * 0.3f,
+                            labelY,
+                        )
+                        if (a.showValues && dh >= 36f) {
+                            val valStr = ctx.fmtValue(rect.node.value)
+                            val valFontSize = a.labelFontSize * 0.85f
+                            context.font(valFontSize)
+                            context.fillStyle(Color(red255 = 255, green255 = 255, blue255 = 255, alpha01 = 0.75f))
+                            context.fillText(
+                                valStr,
+                                dx + dw / 2f - valStr.length * valFontSize * 0.3f,
+                                labelY + a.labelFontSize + 3f,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleNodeClick(params: ClickParams) {
+        lastLayout.firstOrNull {
+            params.x >= it.x && params.x <= it.x + it.w && params.y >= it.y && params.y <= it.y + it.h
+        }?.let { event.onNodeClick?.invoke(it.node) }
+    }
+
+    private fun squarify(nodes: List<TreemapNode>, x: Float, y: Float, w: Float, h: Float): List<TreemapRect> {
+        if (nodes.isEmpty() || w <= 0f || h <= 0f) return emptyList()
+        if (nodes.size == 1) return listOf(TreemapRect(nodes[0], x, y, w, h))
+        val total = nodes.sumOf { it.value.toDouble() }.toFloat()
+        if (total <= 0f) return emptyList()
+        val mid = nodes.size / 2
+        val leftFrac = (nodes.take(mid).sumOf { it.value.toDouble() }.toFloat() / total).coerceIn(0.01f, 0.99f)
+        return if (w >= h) {
+            squarify(nodes.take(mid), x, y, w * leftFrac, h) +
+            squarify(nodes.drop(mid), x + w * leftFrac, y, w * (1f - leftFrac), h)
+        } else {
+            squarify(nodes.take(mid), x, y, w, h * leftFrac) +
+            squarify(nodes.drop(mid), x, y + h * leftFrac, w, h * (1f - leftFrac))
+        }
+    }
+
+    private fun fmtValue(v: Float): String = when {
+        v >= 1_000_000f -> "${(v / 1_000_000f).toInt()}M"
+        v >= 1_000f -> "${(v / 1_000f).toInt()}K"
+        else -> "${v.toInt()}"
+    }
+}
