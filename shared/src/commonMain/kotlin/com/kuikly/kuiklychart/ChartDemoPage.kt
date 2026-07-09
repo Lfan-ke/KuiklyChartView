@@ -23,6 +23,11 @@ import com.tencent.kuiklybase.chart.FunnelSlice
 import com.tencent.kuiklybase.chart.ScatterChart
 import com.tencent.kuiklybase.chart.ScatterPoint
 import com.tencent.kuiklybase.chart.ScatterSeries
+import com.tencent.kuiklybase.chart.WaterfallChart
+import com.tencent.kuiklybase.chart.WaterfallBar
+import com.tencent.kuiklybase.chart.WaterfallBarType
+import com.tencent.kuiklybase.chart.CandlestickChart
+import com.tencent.kuiklybase.chart.CandleStick
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -31,6 +36,7 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
     private var lastPieClick by observable("")
     private var lastScatterClick by observable("")
     private var lastFunnelClick by observable("")
+    private var lastCandleClick by observable("")
     private var gaugeValue by observable(72f)
 
     override fun body(): ViewBuilder {
@@ -531,6 +537,95 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                             color(Color(0x007AFF))
                             margin(left = 16f, top = 4f)
                         }
+                    }
+                }
+
+                // --- WaterfallChart ---
+                View {
+                    attr {
+                        height(36f)
+                        backgroundColor(Color(0xFFEEEEEEL))
+                        justifyContentCenter()
+                        paddingLeft(16f)
+                        marginTop(12f)
+                    }
+                    Text {
+                        attr {
+                            fontSize(13f)
+                            color(Color(0xFF555555L))
+                            text("瀑布图 - 季度收益")
+                        }
+                    }
+                }
+                View {
+                    attr {
+                        height(200f)
+                        marginLeft(16f)
+                        marginRight(16f)
+                        marginTop(8f)
+                    }
+                    WaterfallChart {
+                        attr {
+                            bars(
+                                WaterfallBar("基础", 100f, WaterfallBarType.START),
+                                WaterfallBar("Q1销售", 45f, WaterfallBarType.INCREASE),
+                                WaterfallBar("Q2增长", 30f, WaterfallBarType.INCREASE),
+                                WaterfallBar("Q3成本", 20f, WaterfallBarType.DECREASE),
+                                WaterfallBar("Q4冲刺", 25f, WaterfallBarType.INCREASE),
+                                WaterfallBar("年末", 0f, WaterfallBarType.TOTAL),
+                            )
+                        }
+                    }
+                }
+
+                // --- CandlestickChart ---
+                View {
+                    attr {
+                        height(36f)
+                        backgroundColor(Color(0xFFEEEEEEL))
+                        justifyContentCenter()
+                        paddingLeft(16f)
+                        marginTop(12f)
+                    }
+                    Text {
+                        attr {
+                            fontSize(13f)
+                            color(Color(0xFF555555L))
+                            text("K线图 - 点击蜡烛查看数据")
+                        }
+                    }
+                }
+                View {
+                    attr {
+                        height(220f)
+                        marginLeft(16f)
+                        marginRight(16f)
+                        marginTop(8f)
+                    }
+                    CandlestickChart {
+                        attr {
+                            candles(
+                                CandleStick("Mon", 100f, 108f, 112f, 97f),
+                                CandleStick("Tue", 108f, 105f, 115f, 103f),
+                                CandleStick("Wed", 105f, 118f, 121f, 104f),
+                                CandleStick("Thu", 118f, 112f, 122f, 110f),
+                                CandleStick("Fri", 112f, 125f, 128f, 111f),
+                                CandleStick("Mon", 125f, 120f, 130f, 118f),
+                            )
+                        }
+                        event {
+                            onCandleClick { _, candle ->
+                                ctx.lastCandleClick = "点击: ${candle.label} O=${candle.open.toInt()} C=${candle.close.toInt()}"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastCandleClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 16f)
                     }
                 }
             }

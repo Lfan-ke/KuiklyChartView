@@ -1228,3 +1228,308 @@ class FunnelChartView : ComposeView<FunnelChartAttr, FunnelChartEvent>() {
         }
     }
 }
+
+fun ViewContainer<*, *>.WaterfallChart(init: WaterfallChartView.() -> Unit) {
+    addChild(WaterfallChartView(), init)
+}
+
+enum class WaterfallBarType { START, INCREASE, DECREASE, TOTAL }
+
+data class WaterfallBar(
+    val label: String,
+    val value: Float,
+    val type: WaterfallBarType = WaterfallBarType.INCREASE,
+)
+
+class WaterfallChartAttr : ComposeAttr() {
+    internal var bars by observable(emptyList<WaterfallBar>())
+    internal var increaseColor by observable(Color(0xFF4CAF50L))
+    internal var decreaseColor by observable(Color(0xFFF44336L))
+    internal var totalColor by observable(Color(0xFF1677FFL))
+    internal var startColor by observable(Color(0xFF9E9E9EL))
+    internal var strokeColor by observable(Color(0x33000000L))
+    internal var showValues by observable(true)
+    internal var showLabels by observable(true)
+    internal var barWidthFraction by observable(0.6f)
+    internal var labelFontSize by observable(11f)
+    internal var axisFontSize by observable(10f)
+    internal var connectorColor by observable(Color(0xFFBBBBBBL))
+    internal var showConnectors by observable(true)
+
+    fun bars(list: List<WaterfallBar>) { bars = list }
+    fun bars(vararg bar: WaterfallBar) { bars = bar.toList() }
+    fun increaseColor(c: Color) { increaseColor = c }
+    fun decreaseColor(c: Color) { decreaseColor = c }
+    fun totalColor(c: Color) { totalColor = c }
+    fun startColor(c: Color) { startColor = c }
+    fun showValues(show: Boolean) { showValues = show }
+    fun showLabels(show: Boolean) { showLabels = show }
+    fun barWidthFraction(f: Float) { barWidthFraction = f.coerceIn(0.2f, 0.9f) }
+    fun showConnectors(show: Boolean) { showConnectors = show }
+}
+
+class WaterfallChartView : ComposeView<WaterfallChartAttr, ComposeEvent>() {
+    override fun createAttr() = WaterfallChartAttr()
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas {
+                attr { allFill() }
+                event {
+                    draw { context, width, height ->
+                        val a = ctx.attr
+                        if (a.bars.isEmpty()) return@draw
+                        val bars = a.bars
+                        val n = bars.size
+                        val padL = 36f
+                        val padR = 8f
+                        val padT = 16f
+                        val padB = 28f
+                        val chartW = width - padL - padR
+                        val chartH = height - padT - padB
+                        val slotW = chartW / n
+
+                        val runningBase = FloatArray(n)
+                        val runningTop = FloatArray(n)
+                        var running = 0f
+                        bars.forEachIndexed { i, bar ->
+                            when (bar.type) {
+                                WaterfallBarType.START -> {
+                                    runningBase[i] = 0f
+                                    runningTop[i] = bar.value
+                                    running = bar.value
+                                }
+                                WaterfallBarType.INCREASE -> {
+                                    runningBase[i] = running
+                                    running += bar.value
+                                    runningTop[i] = running
+                                }
+                                WaterfallBarType.DECREASE -> {
+                                    runningTop[i] = running
+                                    running -= bar.value
+                                    runningBase[i] = running
+                                }
+                                WaterfallBarType.TOTAL -> {
+                                    runningBase[i] = 0f
+                                    runningTop[i] = running
+                                }
+                            }
+                        }
+                        val allVals = runningBase.toList() + runningTop.toList()
+                        val minVal = minOf(0f, allVals.min())
+                        val maxVal = maxOf(0f, allVals.max())
+                        val range = (maxVal - minVal).coerceAtLeast(1f)
+                        fun toY(v: Float) = padT + chartH * (1f - (v - minVal) / range)
+
+                        val zeroY = toY(0f)
+                        context.beginPath()
+                        context.moveTo(padL, zeroY)
+                        context.lineTo(padL + chartW, zeroY)
+                        context.strokeStyle(Color(0xFFCCCCCCL))
+                        context.lineWidth(0.5f)
+                        context.stroke()
+
+                        context.font(a.axisFontSize)
+                        context.fillStyle(Color(0xFF999999L))
+                        listOf(minVal, (minVal + maxVal) / 2, maxVal).forEach { v ->
+                            val y = toY(v)
+                            context.fillText(v.fmt0(), 0f, y + a.axisFontSize * 0.35f)
+                        }
+
+                        bars.forEachIndexed { i, bar ->
+                            val x = padL + i * slotW
+                            val bw = slotW * a.barWidthFraction
+                            val bx = x + (slotW - bw) / 2f
+                            val topY = toY(runningTop[i])
+                            val botY = toY(runningBase[i])
+                            val barH = abs(botY - topY).coerceAtLeast(1f)
+                            val rectY = minOf(topY, botY)
+
+                            val barColor = when (bar.type) {
+                                WaterfallBarType.START -> a.startColor
+                                WaterfallBarType.TOTAL -> a.totalColor
+                                WaterfallBarType.INCREASE -> a.increaseColor
+                                WaterfallBarType.DECREASE -> a.decreaseColor
+                            }
+                            context.fillStyle(barColor)
+                            context.fillRect(bx, rectY, bw, barH)
+                            context.strokeStyle(a.strokeColor)
+                            context.lineWidth(0.5f)
+                            context.beginPath()
+                            context.moveTo(bx, rectY)
+                            context.lineTo(bx + bw, rectY)
+                            context.lineTo(bx + bw, rectY + barH)
+                            context.lineTo(bx, rectY + barH)
+                            context.closePath()
+                            context.stroke()
+
+                            if (a.showConnectors && i < n - 1) {
+                                val nextBar = bars[i + 1]
+                                val connY = when (nextBar.type) {
+                                    WaterfallBarType.TOTAL -> toY(0f)
+                                    else -> if (bar.type == WaterfallBarType.DECREASE) toY(runningBase[i]) else toY(runningTop[i])
+                                }
+                                val nextX = padL + (i + 1) * slotW + (slotW - slotW * a.barWidthFraction) / 2f
+                                context.beginPath()
+                                context.moveTo(bx + bw, connY)
+                                context.lineTo(nextX, connY)
+                                context.strokeStyle(a.connectorColor)
+                                context.lineWidth(1f)
+                                context.stroke()
+                            }
+
+                            if (a.showValues) {
+                                val displayVal = bar.value.fmt1()
+                                context.font(a.labelFontSize)
+                                context.fillStyle(Color(0xFF444444L))
+                                val labelX = bx + bw / 2f - displayVal.length * a.labelFontSize * 0.3f
+                                val labelY = if (bar.type == WaterfallBarType.DECREASE) rectY + barH + a.labelFontSize + 1f else rectY - 3f
+                                context.fillText(displayVal, labelX, labelY)
+                            }
+
+                            if (a.showLabels) {
+                                context.font(a.axisFontSize)
+                                context.fillStyle(Color(0xFF888888L))
+                                val lbl = bar.label.take(4)
+                                context.fillText(lbl, bx + bw / 2f - lbl.length * a.axisFontSize * 0.3f, padT + chartH + 18f)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun ViewContainer<*, *>.CandlestickChart(init: CandlestickChartView.() -> Unit) {
+    addChild(CandlestickChartView(), init)
+}
+
+data class CandleStick(
+    val label: String,
+    val open: Float,
+    val close: Float,
+    val high: Float,
+    val low: Float,
+)
+
+class CandlestickChartAttr : ComposeAttr() {
+    internal var candles by observable(emptyList<CandleStick>())
+    internal var bullColor by observable(Color(0xFF4CAF50L))
+    internal var bearColor by observable(Color(0xFFF44336L))
+    internal var wickColor by observable(Color(0xFF888888L))
+    internal var axisFontSize by observable(10f)
+    internal var candleWidthFraction by observable(0.6f)
+
+    fun candles(list: List<CandleStick>) { candles = list }
+    fun candles(vararg c: CandleStick) { candles = c.toList() }
+    fun bullColor(c: Color) { bullColor = c }
+    fun bearColor(c: Color) { bearColor = c }
+    fun candleWidthFraction(f: Float) { candleWidthFraction = f.coerceIn(0.2f, 0.9f) }
+}
+
+class CandlestickChartEvent : ComposeEvent() {
+    internal var onCandleClickHandler: ((Int, CandleStick) -> Unit)? = null
+    fun onCandleClick(handler: (index: Int, candle: CandleStick) -> Unit) { onCandleClickHandler = handler }
+}
+
+class CandlestickChartView : ComposeView<CandlestickChartAttr, CandlestickChartEvent>() {
+    private var lastCandles = emptyList<CandleStick>()
+    private var lastSlotW = 0f
+    private var lastPadL = 0f
+    private var lastPadT = 0f
+    private var lastChartH = 0f
+    private var lastMinVal = 0f
+    private var lastRange = 1f
+
+    override fun createAttr() = CandlestickChartAttr()
+    override fun createEvent() = CandlestickChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas {
+                attr { allFill() }
+                event {
+                    draw { context, width, height ->
+                        val a = ctx.attr
+                        if (a.candles.isEmpty()) return@draw
+                        val candles = a.candles
+                        val n = candles.size
+                        val padL = 40f
+                        val padR = 8f
+                        val padT = 16f
+                        val padB = 28f
+                        val chartW = width - padL - padR
+                        val chartH = height - padT - padB
+                        val slotW = chartW / n
+
+                        ctx.lastCandles = candles
+                        ctx.lastSlotW = slotW
+                        ctx.lastPadL = padL
+                        ctx.lastPadT = padT
+                        ctx.lastChartH = chartH
+
+                        val allVals = candles.flatMap { listOf(it.high, it.low) }
+                        val minVal = allVals.min()
+                        val maxVal = allVals.max()
+                        val range = (maxVal - minVal).coerceAtLeast(1f)
+                        ctx.lastMinVal = minVal
+                        ctx.lastRange = range
+
+                        fun toY(v: Float) = padT + chartH * (1f - (v - minVal) / range)
+
+                        context.font(a.axisFontSize)
+                        val steps = 4
+                        for (s in 0..steps) {
+                            val v = minVal + range * s / steps
+                            val y = toY(v)
+                            context.fillStyle(Color(0xFF999999L))
+                            context.fillText(v.fmt1(), 0f, y + a.axisFontSize * 0.35f)
+                            context.beginPath()
+                            context.moveTo(padL, y)
+                            context.lineTo(padL + chartW, y)
+                            context.strokeStyle(Color(0xFFEEEEEEL))
+                            context.lineWidth(0.5f)
+                            context.stroke()
+                        }
+
+                        candles.forEachIndexed { i, candle ->
+                            val cx = padL + i * slotW + slotW / 2f
+                            val bw = slotW * a.candleWidthFraction
+                            val isBull = candle.close >= candle.open
+                            val color = if (isBull) a.bullColor else a.bearColor
+
+                            val bodyTop = toY(maxOf(candle.open, candle.close))
+                            val bodyBot = toY(minOf(candle.open, candle.close))
+                            val bodyH = (bodyBot - bodyTop).coerceAtLeast(1f)
+
+                            context.beginPath()
+                            context.moveTo(cx, toY(candle.high))
+                            context.lineTo(cx, toY(candle.low))
+                            context.strokeStyle(a.wickColor)
+                            context.lineWidth(1f)
+                            context.stroke()
+
+                            context.fillStyle(color)
+                            context.fillRect(cx - bw / 2f, bodyTop, bw, bodyH)
+
+                            context.font(a.axisFontSize)
+                            context.fillStyle(Color(0xFF888888L))
+                            val lbl = candle.label.take(4)
+                            context.fillText(lbl, cx - lbl.length * a.axisFontSize * 0.3f, padT + chartH + 18f)
+                        }
+                    }
+                    click { params ->
+                        val handler = ctx.event.onCandleClickHandler ?: return@click
+                        val candles = ctx.lastCandles
+                        if (candles.isEmpty()) return@click
+                        val n = candles.size
+                        val i = ((params.x - ctx.lastPadL) / ctx.lastSlotW).toInt().coerceIn(0, n - 1)
+                        if (params.x >= ctx.lastPadL) handler(i, candles[i])
+                    }
+                }
+            }
+        }
+    }
+}
