@@ -25,7 +25,10 @@ import com.tencent.kuikly.core.base.event.ClickParams
 import com.tencent.kuikly.core.reactive.handler.observable
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 fun ViewContainer<*, *>.LineChart(init: LineChartView.() -> Unit) {
@@ -60,6 +63,11 @@ open class ChartAttr : ComposeAttr() {
 
     fun data(series: List<ChartSeries>) {
         seriesList = series
+    }
+
+    fun size(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
     }
 
     fun showGrid(show: Boolean) { showGrid = show }
@@ -422,6 +430,207 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
                     found = true
                 }
             }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// AreaChart - LineChart with fill enabled by default
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.AreaChart(init: AreaChartView.() -> Unit) {
+    addChild(AreaChartView(), init)
+}
+
+class AreaChartAttr : LineChartAttr() {
+    init {
+        fillArea = true
+        showDots = false
+    }
+}
+
+class AreaChartView : LineChartView() {
+    override fun createAttr() = AreaChartAttr()
+}
+
+// ---------------------------------------------------------------------------
+// PieChart / DonutChart
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.PieChart(init: PieChartView.() -> Unit) {
+    addChild(PieChartView(), init)
+}
+
+data class PieSlice(val label: String, val value: Float, val color: Color)
+
+class PieChartAttr : ComposeAttr() {
+
+    internal var slices by observable(emptyList<PieSlice>())
+    internal var holeRadius by observable(0f)
+    internal var strokeColor by observable(Color.WHITE)
+    internal var strokeWidth by observable(2f)
+    internal var showLabels by observable(true)
+    internal var showLegend by observable(true)
+    internal var labelFontSize by observable(11f)
+    internal var startAngleDeg by observable(-90f)
+
+    fun data(vararg slices: PieSlice) { this.slices = slices.toList() }
+    fun data(slices: List<PieSlice>) { this.slices = slices }
+    fun holeRadius(fraction: Float) { holeRadius = fraction.coerceIn(0f, 0.9f) }
+    fun strokeColor(color: Color) { strokeColor = color }
+    fun strokeWidth(width: Float) { strokeWidth = width.coerceAtLeast(0f) }
+    fun showLabels(show: Boolean) { showLabels = show }
+    fun showLegend(show: Boolean) { showLegend = show }
+    fun labelFontSize(size: Float) { labelFontSize = size }
+    fun startAngle(degrees: Float) { startAngleDeg = degrees }
+
+    fun size(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
+    }
+}
+
+class PieChartEvent : ComposeEvent() {
+
+    internal var onSliceClickHandler: ((index: Int, label: String, value: Float) -> Unit)? = null
+
+    fun onSliceClick(handler: (index: Int, label: String, value: Float) -> Unit) {
+        onSliceClickHandler = handler
+    }
+}
+
+class PieChartView : ComposeView<PieChartAttr, PieChartEvent>() {
+
+    private var lastW = 0f
+    private var lastH = 0f
+    private var lastCx = 0f
+    private var lastCy = 0f
+    private var lastOuterR = 0f
+    private var lastInnerR = 0f
+    private var lastStartAngle = 0f
+    private var lastSweepAngles = emptyList<Float>()
+
+    override fun createAttr() = PieChartAttr()
+    override fun createEvent() = PieChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { absolutePositionAllZero() }
+                event {
+                    click { params -> ctx.handlePieClick(params) }
+                }
+            }) { context, w, h ->
+                ctx.lastW = w
+                ctx.lastH = h
+                val slices = ctx.attr.slices
+                if (slices.isEmpty()) return@Canvas
+                val total = slices.sumOf { it.value.toDouble() }.toFloat()
+                if (total <= 0f) return@Canvas
+
+                val legendH = if (ctx.attr.showLegend) 28f else 0f
+                val chartH = h - legendH
+                val outerR = (minOf(w, chartH) / 2f - 8f).coerceAtLeast(10f)
+                val innerR = outerR * ctx.attr.holeRadius
+                val cx = w / 2f
+                val cy = chartH / 2f
+
+                ctx.lastCx = cx
+                ctx.lastCy = cy
+                ctx.lastOuterR = outerR
+                ctx.lastInnerR = innerR
+
+                val startAngleRad = ctx.attr.startAngleDeg * PI.toFloat() / 180f
+                ctx.lastStartAngle = startAngleRad
+
+                val sweepAngles = slices.map { (2f * PI.toFloat()) * it.value / total }
+                ctx.lastSweepAngles = sweepAngles
+
+                var angle = startAngleRad
+                slices.forEachIndexed { idx, slice ->
+                    val sweep = sweepAngles[idx]
+                    val endAngle = angle + sweep
+                    context.beginPath()
+                    if (innerR > 0f) {
+                        context.moveTo(cx + innerR * cos(angle), cy + innerR * sin(angle))
+                        context.lineTo(cx + outerR * cos(angle), cy + outerR * sin(angle))
+                        context.arc(cx, cy, outerR, angle, endAngle, false)
+                        context.arc(cx, cy, innerR, endAngle, angle, true)
+                    } else {
+                        context.moveTo(cx, cy)
+                        context.lineTo(cx + outerR * cos(angle), cy + outerR * sin(angle))
+                        context.arc(cx, cy, outerR, angle, endAngle, false)
+                    }
+                    context.closePath()
+                    context.fillStyle(slice.color)
+                    context.fill()
+                    if (ctx.attr.strokeWidth > 0f) {
+                        context.strokeStyle(ctx.attr.strokeColor)
+                        context.lineWidth(ctx.attr.strokeWidth)
+                        context.stroke()
+                    }
+                    angle = endAngle
+                }
+
+                if (ctx.attr.showLabels) {
+                    context.font(ctx.attr.labelFontSize)
+                    context.fillStyle(Color.WHITE)
+                    angle = startAngleRad
+                    slices.forEachIndexed { idx, slice ->
+                        val sweep = sweepAngles[idx]
+                        val midAngle = angle + sweep / 2f
+                        val labelR = (innerR + outerR) / 2f
+                        val lx = cx + labelR * cos(midAngle)
+                        val ly = cy + labelR * sin(midAngle)
+                        val pct = (slice.value / total * 100f).roundToInt()
+                        if (sweep > 0.26f) {
+                            val text = "$pct%"
+                            context.fillText(text, lx - text.length * 3f, ly + 4f)
+                        }
+                        angle += sweep
+                    }
+                }
+
+                if (ctx.attr.showLegend) {
+                    val legendY = chartH + 6f
+                    val slotW = w / slices.size.coerceAtLeast(1)
+                    context.font(ctx.attr.labelFontSize)
+                    slices.forEachIndexed { idx, slice ->
+                        val lx = idx * slotW + 4f
+                        context.fillStyle(slice.color)
+                        context.fillRect(lx, legendY, 10f, 10f)
+                        context.fillStyle(Color(80, 80, 80, 1f))
+                        val label = if (slice.label.length > 6) slice.label.take(6) else slice.label
+                        context.fillText(label, lx + 13f, legendY + 9f)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handlePieClick(params: ClickParams) {
+        val handler = event.onSliceClickHandler ?: return
+        if (lastW == 0f || lastH == 0f) return
+        val slices = attr.slices
+        if (slices.isEmpty()) return
+        val dx = params.x - lastCx
+        val dy = params.y - lastCy
+        val dist = sqrt(dx * dx + dy * dy)
+        if (dist < lastInnerR || dist > lastOuterR) return
+        var clickAngle = atan2(dy, dx)
+        val startA = lastStartAngle
+        val twoPi = 2f * PI.toFloat()
+        while (clickAngle < startA) clickAngle += twoPi
+        while (clickAngle >= startA + twoPi) clickAngle -= twoPi
+        var angle = startA
+        lastSweepAngles.forEachIndexed { idx, sweep ->
+            val endAngle = angle + sweep
+            if (clickAngle in angle..endAngle) {
+                handler(idx, slices[idx].label, slices[idx].value)
+                return
+            }
+            angle = endAngle
         }
     }
 }
