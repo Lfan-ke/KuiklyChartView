@@ -155,11 +155,16 @@ class LineChartAttr : ChartAttr() {
     internal var dotRadius by observable(4f)
     internal var lineWidth by observable(2f)
     internal var fillArea by observable(false)
+    internal var tapX by observable(-1f)
+    internal var tapY by observable(-1f)
+    internal var tapText by observable("")
+    internal var showTooltip by observable(true)
 
     fun showDots(show: Boolean) { showDots = show }
     fun dotRadius(r: Float) { dotRadius = r.coerceAtLeast(1f) }
     fun lineWidth(w: Float) { lineWidth = w.coerceAtLeast(0.5f) }
     fun fillArea(fill: Boolean) { fillArea = fill }
+    fun showTooltip(show: Boolean) { showTooltip = show }
 }
 
 class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
@@ -278,12 +283,53 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
                         }
                     }
                 }
+
+                // Tooltip overlay for the tapped nearest point
+                val tx = ctx.attr.tapX
+                val ty = ctx.attr.tapY
+                if (ctx.attr.showTooltip && tx >= 0f && ctx.attr.tapText.isNotEmpty()) {
+                    val text = ctx.attr.tapText
+                    val padding = 5f
+                    val fSize = 11f
+                    val boxW = text.length * fSize * 0.6f + padding * 2f
+                    val boxH = fSize + padding * 2f
+                    var bx = tx - boxW / 2f
+                    val by = (ty - boxH - 10f).coerceAtLeast(2f)
+                    bx = bx.coerceIn(2f, w - boxW - 2f)
+
+                    context.save()
+                    context.fillStyle(Color(0xDD222222L))
+                    context.beginPath()
+                    val br = 4f
+                    context.moveTo(bx + br, by)
+                    context.lineTo(bx + boxW - br, by)
+                    context.arc(bx + boxW - br, by + br, br, (-PI / 2).toFloat(), 0f, false)
+                    context.lineTo(bx + boxW, by + boxH - br)
+                    context.arc(bx + boxW - br, by + boxH - br, br, 0f, (PI / 2).toFloat(), false)
+                    context.lineTo(bx + br, by + boxH)
+                    context.arc(bx + br, by + boxH - br, br, (PI / 2).toFloat(), PI.toFloat(), false)
+                    context.lineTo(bx, by + br)
+                    context.arc(bx + br, by + br, br, PI.toFloat(), (-PI / 2).toFloat(), false)
+                    context.closePath()
+                    context.fill()
+
+                    context.fillStyle(Color.WHITE)
+                    context.font(fSize)
+                    context.fillText(text, bx + padding, by + padding + fSize * 0.85f)
+
+                    // Highlight dot
+                    context.beginPath()
+                    context.arc(tx, ty, ctx.attr.dotRadius + 3f, 0f, (2 * PI).toFloat(), false)
+                    context.strokeStyle(Color.WHITE)
+                    context.lineWidth(2f)
+                    context.stroke()
+                    context.restore()
+                }
             }
         }
     }
 
     private fun handleLineClick(params: ClickParams) {
-        val handler = event.onPointClickHandler ?: return
         val w = lastW
         val h = lastH
         if (w == 0f || h == 0f) return
@@ -299,20 +345,29 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
             PADDING_LEFT + if (total > 1) idx * plotW / (total - 1) else plotW / 2f
         fun toY(value: Float): Float =
             PADDING_TOP + plotH * (1f - (value - minVal) / range)
-        val hitRadius = attr.dotRadius + 8f
-        var found = false
+
+        // Find nearest point across all series
+        var bestDist = Float.MAX_VALUE
+        var bestSIdx = -1
+        var bestPIdx = -1
         series.forEachIndexed { sIdx, s ->
-            if (found) return@forEachIndexed
             val n = s.points.size
             s.points.forEachIndexed { pIdx, pt ->
-                if (found) return@forEachIndexed
                 val dx = params.x - toX(pIdx, n)
                 val dy = params.y - toY(pt.value)
-                if (sqrt(dx * dx + dy * dy) <= hitRadius) {
-                    handler(sIdx, pIdx, pt.value)
-                    found = true
-                }
+                val d = sqrt(dx * dx + dy * dy)
+                if (d < bestDist) { bestDist = d; bestSIdx = sIdx; bestPIdx = pIdx }
             }
+        }
+
+        if (bestSIdx >= 0 && bestPIdx >= 0) {
+            val s = series[bestSIdx]
+            val pt = s.points[bestPIdx]
+            val n = s.points.size
+            attr.tapX = toX(bestPIdx, n)
+            attr.tapY = toY(pt.value)
+            attr.tapText = "${pt.label}: ${pt.value.fmt1()}"
+            event.onPointClickHandler?.invoke(bestSIdx, bestPIdx, pt.value)
         }
     }
 }
@@ -322,10 +377,15 @@ class BarChartAttr : ChartAttr() {
     internal var barSpacing by observable(0.2f)
     internal var cornerRadius by observable(2f)
     internal var showValueLabels by observable(true)
+    internal var tapX by observable(-1f)
+    internal var tapY by observable(-1f)
+    internal var tapText by observable("")
+    internal var showTooltip by observable(true)
 
     fun barSpacing(fraction: Float) { barSpacing = fraction.coerceIn(0f, 0.8f) }
     fun cornerRadius(r: Float) { cornerRadius = r.coerceAtLeast(0f) }
     fun showValueLabels(show: Boolean) { showValueLabels = show }
+    fun showTooltip(show: Boolean) { showTooltip = show }
 }
 
 class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
@@ -440,12 +500,46 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
                         context.fillText(pt.label, x - pt.label.length * 3f, PADDING_TOP + plotH + 18f)
                     }
                 }
+
+                // Tooltip overlay for the tapped bar
+                val tx = ctx.attr.tapX
+                val ty = ctx.attr.tapY
+                if (ctx.attr.showTooltip && tx >= 0f && ctx.attr.tapText.isNotEmpty()) {
+                    val text = ctx.attr.tapText
+                    val padding = 5f
+                    val fSize = 11f
+                    val boxW = text.length * fSize * 0.6f + padding * 2f
+                    val boxH = fSize + padding * 2f
+                    var bx = tx - boxW / 2f
+                    val by = (ty - boxH - 10f).coerceAtLeast(2f)
+                    bx = bx.coerceIn(2f, w - boxW - 2f)
+
+                    context.save()
+                    context.fillStyle(Color(0xDD222222L))
+                    context.beginPath()
+                    val br = 4f
+                    context.moveTo(bx + br, by)
+                    context.lineTo(bx + boxW - br, by)
+                    context.arc(bx + boxW - br, by + br, br, (-PI / 2).toFloat(), 0f, false)
+                    context.lineTo(bx + boxW, by + boxH - br)
+                    context.arc(bx + boxW - br, by + boxH - br, br, 0f, (PI / 2).toFloat(), false)
+                    context.lineTo(bx + br, by + boxH)
+                    context.arc(bx + br, by + boxH - br, br, (PI / 2).toFloat(), PI.toFloat(), false)
+                    context.lineTo(bx, by + br)
+                    context.arc(bx + br, by + br, br, PI.toFloat(), (-PI / 2).toFloat(), false)
+                    context.closePath()
+                    context.fill()
+
+                    context.fillStyle(Color.WHITE)
+                    context.font(fSize)
+                    context.fillText(text, bx + padding, by + padding + fSize * 0.85f)
+                    context.restore()
+                }
             }
         }
     }
 
     private fun handleBarClick(params: ClickParams) {
-        val handler = event.onPointClickHandler ?: return
         val w = lastW
         val h = lastH
         if (w == 0f || h == 0f) return
@@ -462,18 +556,18 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
         val spacing = slotW * attr.barSpacing
         val barW = (slotW - spacing) / nSeries
         fun toY(value: Float): Float = PADDING_TOP + plotH * (1f - value / maxVal)
-        var found = false
         series.forEachIndexed { sIdx, s ->
-            if (found) return@forEachIndexed
             s.points.forEachIndexed { gIdx, pt ->
-                if (found) return@forEachIndexed
                 if (pt.value <= 0f) return@forEachIndexed
                 val x = PADDING_LEFT + spacing / 2f + gIdx * slotW + sIdx * barW
                 val barTop = toY(pt.value)
                 val barBottom = PADDING_TOP + plotH
                 if (params.x >= x && params.x <= x + barW && params.y >= barTop && params.y <= barBottom) {
-                    handler(sIdx, gIdx, pt.value)
-                    found = true
+                    attr.tapX = x + barW / 2f
+                    attr.tapY = barTop
+                    attr.tapText = "${pt.label}: ${pt.value.fmt1()}"
+                    event.onPointClickHandler?.invoke(sIdx, gIdx, pt.value)
+                    return
                 }
             }
         }
@@ -2929,4 +3023,190 @@ class CalendarHeatmapView : ComposeView<CalendarHeatmapAttr, CalendarHeatmapEven
 
 fun ViewContainer<*, *>.CalendarHeatmap(init: CalendarHeatmapView.() -> Unit) {
     addChild(CalendarHeatmapView(), init)
+}
+
+// =============================================================================
+// SparklineChart - minimal inline trend line, no axes, no labels
+// =============================================================================
+
+fun ViewContainer<*, *>.SparklineChart(init: SparklineChartView.() -> Unit) {
+    addChild(SparklineChartView(), init)
+}
+
+class SparklineChartAttr : ComposeAttr() {
+    internal var points by observable(emptyList<Float>())
+    internal var lineColor by observable(Color(0xFF1677FFL))
+    internal var fillColor by observable(Color(red255 = 22, green255 = 119, blue255 = 255, alpha01 = 0.15f))
+    internal var sparkLineWidth by observable(1.5f)
+    internal var filled by observable(true)
+
+    fun data(values: List<Float>) { points = values }
+    fun data(vararg values: Float) { points = values.toList() }
+    fun lineColor(c: Color) { lineColor = c }
+    fun fillColor(c: Color) { fillColor = c }
+    fun lineWidth(w: Float) { sparkLineWidth = w.coerceAtLeast(0.5f) }
+    fun filled(f: Boolean) { filled = f }
+    fun chartSize(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
+    }
+}
+
+class SparklineChartView : ComposeView<SparklineChartAttr, ComposeEvent>() {
+    override fun createAttr(): SparklineChartAttr = SparklineChartAttr()
+    override fun createEvent(): ComposeEvent = ComposeEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { allFill() } }) { context, w, h ->
+                val a = ctx.attr
+                val pts = a.points
+                val n = pts.size
+                if (n < 2) return@Canvas
+
+                val minV = pts.min()
+                val maxV = pts.max()
+                val range = if (abs(maxV - minV) < 1e-6f) 1f else maxV - minV
+
+                fun toX(i: Int) = w * i / (n - 1)
+                fun toY(v: Float) = h * (1f - (v - minV) / range)
+
+                if (a.filled) {
+                    context.beginPath()
+                    context.moveTo(toX(0), h)
+                    for (i in 0 until n) context.lineTo(toX(i), toY(pts[i]))
+                    context.lineTo(toX(n - 1), h)
+                    context.closePath()
+                    context.fillStyle(a.fillColor)
+                    context.fill()
+                }
+
+                context.beginPath()
+                context.moveTo(toX(0), toY(pts[0]))
+                for (i in 1 until n) context.lineTo(toX(i), toY(pts[i]))
+                context.strokeStyle(a.lineColor)
+                context.lineWidth(a.sparkLineWidth)
+                context.lineCapRound()
+                context.stroke()
+            }
+        }
+    }
+}
+
+// =============================================================================
+// ProgressRingChart - concentric activity rings (Apple Watch style)
+// =============================================================================
+
+fun ViewContainer<*, *>.ProgressRingChart(init: ProgressRingChartView.() -> Unit) {
+    addChild(ProgressRingChartView(), init)
+}
+
+data class RingData(
+    val label: String,
+    val value: Float,
+    val maxValue: Float,
+    val color: Color,
+    val trackColor: Color = Color(0x22000000L),
+)
+
+class ProgressRingChartAttr : ComposeAttr() {
+    internal var rings by observable(emptyList<RingData>())
+    internal var ringWidth by observable(14f)
+    internal var ringGap by observable(6f)
+    internal var centerText by observable("")
+    internal var centerFontSize by observable(14f)
+    internal var showLabels by observable(true)
+    internal var labelFontSize by observable(11f)
+    internal var startAngleDeg by observable(-90f)
+
+    fun rings(list: List<RingData>) { rings = list }
+    fun rings(vararg r: RingData) { rings = r.toList() }
+    fun ringWidth(w: Float) { ringWidth = w.coerceIn(4f, 40f) }
+    fun ringGap(g: Float) { ringGap = g.coerceAtLeast(2f) }
+    fun centerText(t: String) { centerText = t }
+    fun centerFontSize(sz: Float) { centerFontSize = sz }
+    fun showLabels(show: Boolean) { showLabels = show }
+    fun labelFontSize(sz: Float) { labelFontSize = sz }
+    fun startAngle(degrees: Float) { startAngleDeg = degrees }
+    fun chartSize(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
+    }
+}
+
+class ProgressRingChartView : ComposeView<ProgressRingChartAttr, ComposeEvent>() {
+    override fun createAttr(): ProgressRingChartAttr = ProgressRingChartAttr()
+    override fun createEvent(): ComposeEvent = ComposeEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { allFill() } }) { context, w, h ->
+                val a = ctx.attr
+                val rings = a.rings
+                if (rings.isEmpty()) return@Canvas
+
+                val n = rings.size
+                val labelH = if (a.showLabels) 20f else 0f
+                val chartH = h - labelH
+                val cx = w / 2f
+                val cy = chartH / 2f
+                val totalRingSpace = n * a.ringWidth + (n - 1) * a.ringGap
+                val outerR = minOf(cx, cy) - 4f
+                val innerR = (outerR - totalRingSpace).coerceAtLeast(4f)
+
+                val startRad = a.startAngleDeg * PI.toFloat() / 180f
+                val twoPi = 2f * PI.toFloat()
+
+                rings.forEachIndexed { i, ring ->
+                    val midR = outerR - i * (a.ringWidth + a.ringGap) - a.ringWidth / 2f
+                    if (midR <= 0f) return@forEachIndexed
+
+                    // Track (background arc)
+                    context.beginPath()
+                    context.arc(cx, cy, midR, startRad, startRad + twoPi, false)
+                    context.strokeStyle(ring.trackColor)
+                    context.lineWidth(a.ringWidth)
+                    context.stroke()
+
+                    // Progress arc
+                    val fraction = if (ring.maxValue > 0f) (ring.value / ring.maxValue).coerceIn(0f, 1f) else 0f
+                    if (fraction > 0f) {
+                        val endRad = startRad + twoPi * fraction
+                        context.beginPath()
+                        context.arc(cx, cy, midR, startRad, endRad, false)
+                        context.strokeStyle(ring.color)
+                        context.lineWidth(a.ringWidth)
+                        context.lineCapRound()
+                        context.stroke()
+                    }
+                }
+
+                // Center text
+                if (a.centerText.isNotEmpty()) {
+                    context.font(a.centerFontSize)
+                    context.fillStyle(Color(0xFF282828L))
+                    context.textAlign(TextAlign.CENTER)
+                    context.fillText(a.centerText, cx, cy + a.centerFontSize * 0.35f)
+                    context.textAlign(TextAlign.LEFT)
+                }
+
+                // Legend row at bottom
+                if (a.showLabels && rings.isNotEmpty()) {
+                    val legendY = chartH + 4f + a.labelFontSize
+                    val slotW = w / n.coerceAtLeast(1)
+                    context.font(a.labelFontSize)
+                    rings.forEachIndexed { i, ring ->
+                        val lx = i * slotW + slotW / 2f
+                        context.fillStyle(ring.color)
+                        context.textAlign(TextAlign.CENTER)
+                        val pct = if (ring.maxValue > 0f) ((ring.value / ring.maxValue) * 100f).roundToInt() else 0
+                        context.fillText("${ring.label} $pct%", lx, legendY)
+                    }
+                    context.textAlign(TextAlign.LEFT)
+                }
+            }
+        }
+    }
 }
