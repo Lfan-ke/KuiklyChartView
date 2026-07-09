@@ -32,6 +32,8 @@ import com.tencent.kuiklybase.chart.HeatmapChart
 import com.tencent.kuiklybase.chart.HeatmapCell
 import com.tencent.kuiklybase.chart.TreemapChart
 import com.tencent.kuiklybase.chart.TreemapNode
+import com.tencent.kuiklybase.chart.BoxplotChart
+import com.tencent.kuiklybase.chart.BoxplotData
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -43,6 +45,7 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
     private var lastCandleClick by observable("")
     private var lastHeatmapClick by observable("")
     private var lastTreemapClick by observable("")
+    private var lastBoxplotClick by observable("")
     private var gaugeValue by observable(72f)
 
     override fun body(): ViewBuilder {
@@ -730,6 +733,49 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                 Text {
                     attr {
                         text(ctx.lastTreemapClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 16f)
+                    }
+                }
+
+                // Boxplot Chart section
+                Text {
+                    attr {
+                        text("箱线图 - BoxplotChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(220f)
+                        margin(left = 16f, right = 16f, bottom = 32f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    BoxplotChart {
+                        attr {
+                            size(Float.NaN, 220f)
+                            boxes(
+                                BoxplotData("Q1", 10f, 20f, 35f, 55f, 70f, listOf(5f, 78f)),
+                                BoxplotData("Q2", 15f, 28f, 42f, 60f, 80f),
+                                BoxplotData("Q3", 8f, 18f, 30f, 48f, 65f, listOf(2f, 72f)),
+                                BoxplotData("Q4", 20f, 35f, 50f, 68f, 85f),
+                                BoxplotData("Q5", 12f, 22f, 38f, 52f, 75f, listOf(90f)),
+                            )
+                        }
+                        event {
+                            onBoxClick { box ->
+                                ctx.lastBoxplotClick = "点击: ${box.label} 中位数=${box.median.toInt()}"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastBoxplotClick)
                         fontSize(12f)
                         color(Color(0xFF1677FFL))
                         margin(left = 16f, top = 4f, bottom = 16f)
