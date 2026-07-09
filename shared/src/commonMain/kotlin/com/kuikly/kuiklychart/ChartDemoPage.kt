@@ -47,6 +47,9 @@ import com.tencent.kuiklybase.chart.MixedSeries
 import com.tencent.kuiklybase.chart.MixedSeriesType
 import com.tencent.kuiklybase.chart.NightingaleRoseChart
 import com.tencent.kuiklybase.chart.RoseSlice
+import com.tencent.kuiklybase.chart.SparklineChart
+import com.tencent.kuiklybase.chart.ProgressRingChart
+import com.tencent.kuiklybase.chart.RingData
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -1041,6 +1044,130 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                             weeks(14)
                             colorScale(CalendarColorScale.BLUE)
                             cellSize(14f)
+                        }
+                    }
+                }
+
+                // ── SparklineChart ───────────────────────────────────────────
+                View {
+                    attr { marginLeft(16f); marginTop(24f); marginBottom(4f) }
+                    Text {
+                        attr { text("迷你趋势图 - SparklineChart"); fontSize(14f); color(Color(0xFF333333L)) }
+                    }
+                }
+                View {
+                    attr {
+                        flexDirectionRow()
+                        marginLeft(16f)
+                        marginRight(16f)
+                        marginBottom(16f)
+                    }
+                    // Three inline sparklines side by side
+                    View {
+                        attr {
+                            flex(1f)
+                            height(48f)
+                            backgroundColor(Color(0xFFFFFFFF))
+                            borderRadius(6f)
+                            marginRight(8f)
+                            padding(4f, 4f, 4f, 4f)
+                        }
+                        SparklineChart {
+                            attr {
+                                chartSize(Float.NaN, 48f)
+                                data(12f, 18f, 15f, 22f, 19f, 28f, 24f, 31f)
+                                lineColor(Color(0xFF1677FFL))
+                                fillColor(Color(red255 = 22, green255 = 119, blue255 = 255, alpha01 = 0.15f))
+                                lineWidth(1.5f)
+                            }
+                        }
+                    }
+                    View {
+                        attr {
+                            flex(1f)
+                            height(48f)
+                            backgroundColor(Color(0xFFFFFFFF))
+                            borderRadius(6f)
+                            marginRight(8f)
+                            padding(4f, 4f, 4f, 4f)
+                        }
+                        SparklineChart {
+                            attr {
+                                chartSize(Float.NaN, 48f)
+                                data(30f, 25f, 28f, 20f, 22f, 18f, 15f, 12f)
+                                lineColor(Color(0xFFFF4D4FL))
+                                fillColor(Color(red255 = 255, green255 = 77, blue255 = 79, alpha01 = 0.12f))
+                                lineWidth(1.5f)
+                            }
+                        }
+                    }
+                    View {
+                        attr {
+                            flex(1f)
+                            height(48f)
+                            backgroundColor(Color(0xFFFFFFFF))
+                            borderRadius(6f)
+                            padding(4f, 4f, 4f, 4f)
+                        }
+                        SparklineChart {
+                            attr {
+                                chartSize(Float.NaN, 48f)
+                                data(10f, 22f, 14f, 28f, 18f, 32f, 20f, 26f)
+                                lineColor(Color(0xFF52C41AL))
+                                fillColor(Color(red255 = 82, green255 = 196, blue255 = 26, alpha01 = 0.15f))
+                                lineWidth(1.5f)
+                            }
+                        }
+                    }
+                }
+
+                // ── ProgressRingChart ────────────────────────────────────────
+                View {
+                    attr { marginLeft(16f); marginTop(8f); marginBottom(4f) }
+                    Text {
+                        attr { text("活动环图 - ProgressRingChart"); fontSize(14f); color(Color(0xFF333333L)) }
+                    }
+                }
+                View {
+                    attr {
+                        height(240f)
+                        marginLeft(16f)
+                        marginRight(16f)
+                        marginBottom(32f)
+                        backgroundColor(Color(0xFF1C1C1EL))
+                        borderRadius(12f)
+                    }
+                    ProgressRingChart {
+                        attr {
+                            chartSize(Float.NaN, 240f)
+                            rings(
+                                RingData(
+                                    label = "卡路里",
+                                    value = 480f,
+                                    maxValue = 600f,
+                                    color = Color(0xFFFF375FL),
+                                    trackColor = Color(red255 = 255, green255 = 55, blue255 = 95, alpha01 = 0.2f),
+                                ),
+                                RingData(
+                                    label = "运动",
+                                    value = 28f,
+                                    maxValue = 30f,
+                                    color = Color(0xFF30D158L),
+                                    trackColor = Color(red255 = 48, green255 = 209, blue255 = 88, alpha01 = 0.2f),
+                                ),
+                                RingData(
+                                    label = "站立",
+                                    value = 9f,
+                                    maxValue = 12f,
+                                    color = Color(0xFF32D4FEL),
+                                    trackColor = Color(red255 = 50, green255 = 212, blue255 = 254, alpha01 = 0.2f),
+                                ),
+                            )
+                            centerText("今日")
+                            centerFontSize(16f)
+                            showLabels(true)
+                            ringWidth(18f)
+                            ringGap(8f)
                         }
                     }
                 }
