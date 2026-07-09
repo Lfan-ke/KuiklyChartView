@@ -18,6 +18,8 @@ import com.tencent.kuiklybase.chart.PieSlice
 import com.tencent.kuiklybase.chart.RadarAxis
 import com.tencent.kuiklybase.chart.RadarChart
 import com.tencent.kuiklybase.chart.RadarSeries
+import com.tencent.kuiklybase.chart.FunnelChart
+import com.tencent.kuiklybase.chart.FunnelSlice
 import com.tencent.kuiklybase.chart.ScatterChart
 import com.tencent.kuiklybase.chart.ScatterPoint
 import com.tencent.kuiklybase.chart.ScatterSeries
@@ -28,6 +30,7 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
     private var lastClick by observable("")
     private var lastPieClick by observable("")
     private var lastScatterClick by observable("")
+    private var lastFunnelClick by observable("")
     private var gaugeValue by observable(72f)
 
     override fun body(): ViewBuilder {
@@ -476,6 +479,54 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                     Text {
                         attr {
                             text(if (ctx.lastScatterClick.isEmpty()) "" else "点击了: ${ctx.lastScatterClick}")
+                            fontSize(12f)
+                            color(Color(0x007AFF))
+                            margin(left = 16f, top = 4f)
+                        }
+                    }
+                }
+
+                // Funnel Chart section
+                Text {
+                    attr {
+                        text("漏斗图 - FunnelChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(300f)
+                        margin(left = 16f, right = 16f, bottom = 32f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    FunnelChart {
+                        attr {
+                            size(Float.NaN, 300f)
+                            data(
+                                FunnelSlice("访问", 500f, Color(0xFF1677FFL)),
+                                FunnelSlice("点击", 350f, Color(0xFF52C41AL)),
+                                FunnelSlice("加入购物车", 220f, Color(0xFFFF7A45L)),
+                                FunnelSlice("支付", 120f, Color(0xFFFF4D4FL)),
+                                FunnelSlice("复购", 60f, Color(0xFF722ED1L)),
+                            )
+                            showLabels(true)
+                            showValues(true)
+                            showLegend(true)
+                            gap(6f)
+                            strokeWidth(1.5f)
+                        }
+                        event {
+                            onSliceClick { _, label, value ->
+                                ctx.lastFunnelClick = "$label: ${value.toInt()}"
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            text(if (ctx.lastFunnelClick.isEmpty()) "" else "点击了: ${ctx.lastFunnelClick}")
                             fontSize(12f)
                             color(Color(0x007AFF))
                             margin(left = 16f, top = 4f)

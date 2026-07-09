@@ -1087,3 +1087,144 @@ class ScatterChartView : ComposeView<ScatterChartAttr, ScatterChartEvent>() {
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// FunnelChart (ECharts Funnel style)
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.FunnelChart(init: FunnelChartView.() -> Unit) {
+    addChild(FunnelChartView(), init)
+}
+
+data class FunnelSlice(val label: String, val value: Float, val color: Color)
+
+class FunnelChartAttr : ComposeAttr() {
+    internal var slices by observable(emptyList<FunnelSlice>())
+    internal var showLabels by observable(true)
+    internal var showValues by observable(true)
+    internal var showLegend by observable(true)
+    internal var gap by observable(4f)
+    internal var labelFontSize by observable(12f)
+    internal var sort by observable(true)
+    internal var strokeColor by observable(Color.WHITE)
+    internal var strokeWidth by observable(1.5f)
+
+    fun data(vararg slices: FunnelSlice) { this.slices = slices.toList() }
+    fun data(list: List<FunnelSlice>) { slices = list }
+    fun showLabels(show: Boolean) { showLabels = show }
+    fun showValues(show: Boolean) { showValues = show }
+    fun showLegend(show: Boolean) { showLegend = show }
+    fun gap(g: Float) { gap = g.coerceAtLeast(0f) }
+    fun labelFontSize(size: Float) { labelFontSize = size }
+    fun sort(enabled: Boolean) { sort = enabled }
+    fun strokeColor(color: Color) { strokeColor = color }
+    fun strokeWidth(w: Float) { strokeWidth = w.coerceAtLeast(0f) }
+    fun size(w: Float, h: Float) { if (!w.isNaN()) width(w); if (!h.isNaN()) height(h) }
+}
+
+class FunnelChartEvent : ComposeEvent() {
+    internal var onSliceClickHandler: ((index: Int, label: String, value: Float) -> Unit)? = null
+    fun onSliceClick(handler: (index: Int, label: String, value: Float) -> Unit) { onSliceClickHandler = handler }
+}
+
+class FunnelChartView : ComposeView<FunnelChartAttr, FunnelChartEvent>() {
+
+    // [topLX, topRX, topY, botLX, botRX, botY] per slice
+    private var lastSliceRects = emptyList<FloatArray>()
+    private var lastSortedSlices = emptyList<FunnelSlice>()
+
+    override fun createAttr() = FunnelChartAttr()
+    override fun createEvent() = FunnelChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { absolutePositionAllZero() }
+                event { click { params -> ctx.handleClick(params) } }
+            }) { context, w, h ->
+                val a = ctx.attr
+                val raw = a.slices
+                if (raw.isEmpty()) return@Canvas
+                val slices = if (a.sort) raw.sortedByDescending { it.value } else raw
+                ctx.lastSortedSlices = slices
+                val n = slices.size
+                val maxVal = slices.maxOf { it.value }.takeIf { it > 0f } ?: 1f
+
+                val legendH = if (a.showLegend) 24f else 0f
+                val chartW = (w - PADDING_LEFT - PADDING_RIGHT).coerceAtLeast(10f)
+                val chartH = (h - PADDING_TOP - PADDING_BOTTOM - legendH).coerceAtLeast(10f)
+                val sliceH = ((chartH - a.gap * (n - 1)) / n).coerceAtLeast(4f)
+                val cx = PADDING_LEFT + chartW / 2f
+                val rects = mutableListOf<FloatArray>()
+
+                slices.forEachIndexed { idx, slice ->
+                    val topW = chartW * slice.value / maxVal
+                    val nextW = if (idx < n - 1) chartW * slices[idx + 1].value / maxVal else topW * 0.3f
+                    val topY = PADDING_TOP + idx * (sliceH + a.gap)
+                    val botY = topY + sliceH
+                    val topLX = cx - topW / 2f
+                    val topRX = cx + topW / 2f
+                    val botLX = cx - nextW / 2f
+                    val botRX = cx + nextW / 2f
+
+                    rects.add(floatArrayOf(topLX, topRX, topY, botLX, botRX, botY))
+
+                    context.beginPath()
+                    context.moveTo(topLX, topY)
+                    context.lineTo(topRX, topY)
+                    context.lineTo(botRX, botY)
+                    context.lineTo(botLX, botY)
+                    context.closePath()
+                    context.fillStyle(slice.color)
+                    context.fill()
+                    if (a.strokeWidth > 0f) {
+                        context.strokeStyle(a.strokeColor)
+                        context.lineWidth(a.strokeWidth)
+                        context.stroke()
+                    }
+
+                    if (a.showLabels) {
+                        context.font(a.labelFontSize)
+                        context.fillStyle(Color.WHITE)
+                        val labelText = if (a.showValues) "${slice.label}: ${slice.value.fmt0()}" else slice.label
+                        val midY = (topY + botY) / 2f + a.labelFontSize * 0.35f
+                        context.fillText(labelText, cx - labelText.length * a.labelFontSize * 0.3f, midY)
+                    }
+                }
+                ctx.lastSliceRects = rects
+
+                if (a.showLegend) {
+                    val legendY = h - legendH + 6f
+                    val slotW = w / slices.size.coerceAtLeast(1)
+                    context.font(a.labelFontSize)
+                    slices.forEachIndexed { idx, slice ->
+                        val lx = idx * slotW + 4f
+                        context.fillStyle(slice.color)
+                        context.fillRect(lx, legendY, 10f, 10f)
+                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillText(slice.label.take(6), lx + 14f, legendY + 9f)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleClick(params: ClickParams) {
+        val handler = event.onSliceClickHandler ?: return
+        val slices = lastSortedSlices
+        lastSliceRects.forEachIndexed { idx, rect ->
+            if (idx >= slices.size) return@forEachIndexed
+            val topLX = rect[0]; val topRX = rect[1]; val topY = rect[2]
+            val botLX = rect[3]; val botRX = rect[4]; val botY = rect[5]
+            if (params.y < topY || params.y > botY) return@forEachIndexed
+            val frac = if (botY > topY) (params.y - topY) / (botY - topY) else 0f
+            val lx = topLX + (botLX - topLX) * frac
+            val rx = topRX + (botRX - topRX) * frac
+            if (params.x in lx..rx) {
+                handler(idx, slices[idx].label, slices[idx].value)
+                return
+            }
+        }
+    }
+}
