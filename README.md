@@ -1,13 +1,24 @@
 # KuiklyChartView
 
-Kuikly 跨平台图表组件，支持折线图（LineChart）和柱状图（BarChart），适配 Android / iOS / 鸿蒙三端。
+基于 [KuiklyUI](https://github.com/Tencent-TDS/KuiklyUI) 跨端框架构建的图表组件库，支持 22 种图表类型，适配 Android、iOS、鸿蒙三端。
 
 ## 功能特性
 
-- **LineChart（折线图）**：支持多系列数据、区域填充、数据点标注、自定义线宽和点半径
-- **BarChart（柱状图）**：支持分组多系列、圆角矩形、数值标签
-- **通用能力**：网格线、坐标轴标签、自定义颜色、自适应布局
-- 纯 Kuikly DSL 实现，无原生平台依赖，开箱即用
+| 类别 | 图表类型 |
+|------|----------|
+| 基础图表 | LineChart、BarChart、AreaChart、PieChart |
+| 统计图表 | RadarChart、ScatterChart、BubbleChart、BoxplotChart |
+| 金融图表 | CandlestickChart、WaterfallChart |
+| 高级图表 | GaugeChart、HeatmapChart、TreemapChart、FunnelChart |
+| 流向图表 | SankeyChart、MixedChart |
+| 周期图表 | CalendarHeatmap、NightingaleRoseChart |
+| 轻量图表 | SparklineChart、ProgressRingChart |
+
+全部采用纯 Kuikly DSL + Canvas 实现，无原生平台依赖，开箱即用。支持：
+- 4 种内置主题（Default / Ocean / Sunset / Forest）
+- 点击数据点展示 Tooltip
+- 动画与数据更新
+- 自定义颜色、网格、坐标轴
 
 ## 快速接入
 
@@ -37,19 +48,7 @@ kotlin {
 }
 ```
 
-## API 文档
-
-### 数据模型
-
-```kotlin
-data class ChartDataPoint(val label: String, val value: Float)
-
-data class ChartSeries(
-    val name: String,
-    val points: List<ChartDataPoint>,
-    val color: Color,
-)
-```
+## 基础用法
 
 ### LineChart（折线图）
 
@@ -69,11 +68,8 @@ LineChart {
             )
         )
         fillArea(true)
-        lineWidth(2.5f)
         showDots(true)
-        dotRadius(4f)
         showGrid(true)
-        gridLineCount(4)
     }
 }
 ```
@@ -85,31 +81,34 @@ BarChart {
     attr {
         size(Float.NaN, 220f)
         data(
-            ChartSeries(
-                name = "iOS",
-                points = listOf(
-                    ChartDataPoint("Q1", 45f),
-                    ChartDataPoint("Q2", 62f),
-                ),
-                color = Color(0x007AFF),
-            ),
-            ChartSeries(
-                name = "Android",
-                points = listOf(
-                    ChartDataPoint("Q1", 38f),
-                    ChartDataPoint("Q2", 55f),
-                ),
-                color = Color(0x34C759),
-            )
+            ChartSeries("iOS", listOf(ChartDataPoint("Q1", 45f), ChartDataPoint("Q2", 62f)), Color(0x007AFF)),
+            ChartSeries("Android", listOf(ChartDataPoint("Q1", 38f), ChartDataPoint("Q2", 55f)), Color(0x34C759))
         )
         cornerRadius(4f)
-        barSpacing(0.25f)
         showValueLabels(true)
     }
 }
 ```
 
-### 通用属性
+### PieChart（饼图）
+
+```kotlin
+PieChart {
+    attr {
+        size(Float.NaN, 260f)
+        slices(
+            PieSlice("产品A", 35f, Color(0x5C7CFA)),
+            PieSlice("产品B", 25f, Color(0x2DC7A0)),
+            PieSlice("产品C", 20f, Color(0xF59E0B)),
+            PieSlice("产品D", 20f, Color(0xEF4444))
+        )
+        donut(true)
+        showLabels(true)
+    }
+}
+```
+
+## 通用属性
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -119,12 +118,18 @@ BarChart {
 | `gridColor` | Color | 浅灰 | 网格线颜色 |
 | `labelFontSize` | Float | 11f | 标签字号 |
 | `gridLineCount` | Int | 4 | 网格线数量（2~10）|
+| `theme(ChartTheme)` | ChartTheme | DEFAULT | 主题（DEFAULT/OCEAN/SUNSET/FOREST）|
 
 ## 示例
 
-参见 `shared/src/commonMain/kotlin/com/kuikly/kuiklychart/ChartDemoPage.kt`。
+完整示例见 `shared/src/commonMain/kotlin/com/kuikly/kuiklychart/ChartDemoPage.kt`，
+在线效果演示见 [GitHub Pages](https://lfan-ke.github.io/KuiklyChartView/)。
 
 ## 相关资源
 
 - [Kuikly 官方文档](https://kuikly.tds.qq.com/)
-- [KuiklyChatUI 参考实现](https://github.com/Kuikly-contrib/KuiklyChatUI)
+- [KuiklyUI 仓库](https://github.com/Tencent-TDS/KuiklyUI)
+
+## License
+
+[KuiklyUI License](https://github.com/Tencent-TDS/KuiklyUI/blob/main/LICENSE)
