@@ -12,7 +12,7 @@
    KuiklyChartView Showcase - Design System
    ============================================================ */
 :root {
-  --sidebar-bg: #0f172a;
+  --sidebar-bg: #0d1117;
   --sidebar-active: #1e3a5f;
   --sidebar-text: #cbd5e1;
   --sidebar-text-dim: #64748b;
@@ -25,7 +25,7 @@
   --text-secondary: #475569;
   --text-muted: #94a3b8;
   --border: #e2e8f0;
-  --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --header-gradient: linear-gradient(135deg, #5b21b6 0%, #667eea 40%, #764ba2 70%, #9d4edd 100%);
   --code-bg: #1e1e2e;
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
@@ -33,7 +33,7 @@
   --radius: 12px;
   --radius-sm: 8px;
   --sidebar-w: 260px;
-  --topbar-h: 64px;
+  --topbar-h: 58px;
   --transition: 0.2s ease;
 }
 
@@ -187,10 +187,10 @@ body {
   transition: transform 0.28s ease;
 }
 
-.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar { width: 4px; }
 .sidebar::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: #21262d;
+  border-radius: 2px;
 }
 .sidebar::-webkit-scrollbar-track { background: transparent; }
 
@@ -239,7 +239,7 @@ body {
 }
 
 .sidebar .nav-group-title {
-  color: var(--sidebar-text-dim);
+  color: #484f58;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -265,10 +265,12 @@ body {
   gap: 10px;
   padding: 9px 20px;
   color: var(--sidebar-text);
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   text-decoration: none;
   border-left: 3px solid transparent;
+  border-radius: 0 6px 6px 0;
+  margin-right: 6px;
   transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
 
@@ -278,10 +280,10 @@ body {
 }
 
 .sidebar .nav-item.active {
-  background: var(--sidebar-active);
-  color: #fff;
+  background: rgba(102,126,234,.18);
+  color: #f0f0ff;
   border-left-color: var(--accent);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sidebar .nav-item .dot {
@@ -410,10 +412,10 @@ body {
   box-shadow: var(--shadow-sm);
   scroll-margin-top: calc(var(--topbar-h) + 20px);
   overflow: hidden;
-  transition: box-shadow var(--transition);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.chart-card:hover { box-shadow: var(--shadow-md); }
+.chart-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 
 .chart-card .card-header {
   padding: 20px 28px;
@@ -928,7 +930,7 @@ body {
   <div class="spacer"></div>
   <div class="actions">
     <span class="version-badge">v1.2.0</span>
-    <a class="icon-btn" href="https://github.com/Tencent/KuiklyUI" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub">
+    <a class="icon-btn" href="https://github.com/Lfan-ke/KuiklyChartView" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.72-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12 24 5.73 18.77.5 12 .5z"/></svg>
     </a>
     <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
@@ -944,7 +946,7 @@ body {
 <aside class="sidebar" id="sidebar">
   <div class="search-wrap">
     <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
-    <input type="text" class="search-input" id="searchInput" placeholder="搜索图表组件..." autocomplete="off">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search components..." autocomplete="off">
   </div>
   <nav id="navList"></nav>
   <div class="no-results" id="noResults">未找到匹配的组件</div>
@@ -3854,6 +3856,13 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+</script>
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none;position:fixed;bottom:24px;right:24px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:20px;z-index:200;box-shadow:0 4px 16px rgba(102,126,234,.45);transition:all .2s" title="Back to top">&#8593;</button>
+<script>
+window.addEventListener('scroll',function(){
+  var btn=document.getElementById('scroll-top');
+  if(btn)btn.style.display=window.scrollY>400?'block':'none';
+},{passive:true});
 </script>
 </body>
 </html>
