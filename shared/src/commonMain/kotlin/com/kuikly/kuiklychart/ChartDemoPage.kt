@@ -42,6 +42,9 @@ import com.tencent.kuiklybase.chart.SankeyLink
 import com.tencent.kuiklybase.chart.CalendarDay
 import com.tencent.kuiklybase.chart.CalendarHeatmap
 import com.tencent.kuiklybase.chart.CalendarColorScale
+import com.tencent.kuiklybase.chart.MixedChart
+import com.tencent.kuiklybase.chart.MixedSeries
+import com.tencent.kuiklybase.chart.MixedSeriesType
 import com.tencent.kuiklybase.chart.NightingaleRoseChart
 import com.tencent.kuiklybase.chart.RoseSlice
 
@@ -940,6 +943,42 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                         fontSize(12f)
                         color(Color(0xFF1677FFL))
                         margin(left = 16f, top = 4f, bottom = 32f)
+                    }
+                }
+
+                // ── MixedChart ──────────────────────────────────────────────
+                View {
+                    attr { marginLeft(16f); marginTop(16f); marginBottom(4f) }
+                    Text {
+                        attr { text("混合图 - MixedChart (柱+线)"); fontSize(14f); color(Color(0xFF333333L)) }
+                    }
+                }
+                View {
+                    attr { height(220f); marginLeft(16f); marginRight(16f); marginBottom(16f) }
+                    MixedChart {
+                        attr {
+                            mixedData(
+                                MixedSeries(
+                                    "月销量",
+                                    listOf("1月","2月","3月","4月","5月","6月").mapIndexed { i, m ->
+                                        ChartDataPoint(m, listOf(120f,200f,150f,80f,170f,110f)[i])
+                                    },
+                                    Color(0xFF1677FFL),
+                                    MixedSeriesType.BAR,
+                                ),
+                                MixedSeries(
+                                    "环比增长",
+                                    listOf("1月","2月","3月","4月","5月","6月").mapIndexed { i, m ->
+                                        ChartDataPoint(m, listOf(50f,180f,100f,60f,150f,90f)[i])
+                                    },
+                                    Color(0xFFFF4D4FL),
+                                    MixedSeriesType.LINE,
+                                    lineWidth = 2f,
+                                    dotRadius = 4f,
+                                ),
+                            )
+                            showGrid(true)
+                        }
                     }
                 }
 

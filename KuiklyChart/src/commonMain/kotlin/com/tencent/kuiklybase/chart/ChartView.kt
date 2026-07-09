@@ -1445,6 +1445,156 @@ fun ViewContainer<*, *>.CandlestickChart(init: CandlestickChartView.() -> Unit) 
     addChild(CandlestickChartView(), init)
 }
 
+// =============================================================================
+// MixedChart - bar + line combo on shared canvas (ECharts mixed type)
+// =============================================================================
+
+enum class MixedSeriesType { BAR, LINE }
+
+data class MixedSeries(
+    val name: String,
+    val points: List<ChartDataPoint>,
+    val color: Color,
+    val type: MixedSeriesType = MixedSeriesType.BAR,
+    val lineWidth: Float = 2f,
+    val dotRadius: Float = 4f,
+    val fillArea: Boolean = false,
+)
+
+class MixedChartAttr : ChartAttr() {
+    internal var mixedSeries by observable(emptyList<MixedSeries>())
+    internal var barWidthFraction by observable(0.5f)
+    internal var cornerRadius by observable(3f)
+
+    fun mixedData(vararg s: MixedSeries) { mixedSeries = s.toList() }
+    fun mixedData(list: List<MixedSeries>) { mixedSeries = list }
+    fun barWidthFraction(f: Float) { barWidthFraction = f.coerceIn(0.1f, 0.9f) }
+    fun cornerRadius(r: Float) { cornerRadius = r.coerceAtLeast(0f) }
+}
+
+class MixedChartView : ComposeView<MixedChartAttr, ChartEvent>() {
+
+    override fun createAttr(): MixedChartAttr = MixedChartAttr()
+    override fun createEvent(): ChartEvent = ChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { absolutePositionAllZero() } }) { context, width, height ->
+                val a = ctx.attr
+                if (a.mixedSeries.isEmpty()) return@Canvas
+
+                val padL = PADDING_LEFT
+                val padR = PADDING_RIGHT
+                val padT = PADDING_TOP
+                val padB = PADDING_BOTTOM
+                val chartW = width - padL - padR
+                val chartH = height - padT - padB
+
+                val allVals = a.mixedSeries.flatMap { s -> s.points.map { it.value } }
+                val (minVal, maxVal) = computeRange(allVals)
+                val range = maxVal - minVal
+
+                fun yPos(v: Float) = padT + chartH - (v - minVal) / range * chartH
+
+                val labels = a.mixedSeries.firstOrNull()?.points?.map { it.label } ?: return@Canvas
+                val n = labels.size
+                val slotW = chartW / n
+
+                // Grid and axis
+                if (a.showGrid) {
+                    context.lineWidth(0.5f)
+                    context.strokeStyle(a.gridColor)
+                    for (i in 0..a.gridLineCount) {
+                        val y = padT + chartH - i.toFloat() / a.gridLineCount * chartH
+                        context.beginPath(); context.moveTo(padL, y); context.lineTo(padL + chartW, y); context.stroke()
+                    }
+                }
+                context.lineWidth(1f)
+                context.strokeStyle(a.axisColor)
+                context.beginPath(); context.moveTo(padL, padT); context.lineTo(padL, padT + chartH); context.lineTo(padL + chartW, padT + chartH); context.stroke()
+
+                // Y labels
+                if (a.showAxisLabels) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(Color(0xFF888888L))
+                    context.textAlign(TextAlign.CENTER)
+                    for (i in 0..a.gridLineCount) {
+                        val v = minVal + range * i / a.gridLineCount
+                        val y = padT + chartH - i.toFloat() / a.gridLineCount * chartH
+                        context.fillText(v.fmt0(), padL - 20f, y + 4f)
+                    }
+                }
+
+                // Draw bar series first, then line series on top
+                val barSeries = a.mixedSeries.filter { it.type == MixedSeriesType.BAR }
+                val lineSeries = a.mixedSeries.filter { it.type == MixedSeriesType.LINE }
+                val barCount = barSeries.size.coerceAtLeast(1)
+                val barW = slotW * a.barWidthFraction / barCount
+
+                barSeries.forEachIndexed { sIdx, series ->
+                    series.points.forEachIndexed { pIdx, pt ->
+                        val x = padL + pIdx * slotW + (sIdx * barW) + (slotW * (1f - a.barWidthFraction) / 2f)
+                        val y = yPos(pt.value)
+                        val bh = padT + chartH - y
+                        context.fillStyle(series.color)
+                        context.fillRoundRect(x, y, barW - 1f, bh, a.cornerRadius)
+                    }
+                }
+
+                lineSeries.forEach { series ->
+                    val pts = series.points
+                    if (pts.isEmpty()) return@forEach
+                    fun cx(i: Int) = padL + i * slotW + slotW / 2f
+                    fun cy(i: Int) = yPos(pts[i].value)
+
+                    if (series.fillArea) {
+                        val grad = context.createLinearGradient(0f, padT, 0f, padT + chartH)
+                        grad.addColorStop(0f, series.color)
+                        grad.addColorStop(1f, Color(red255 = 255, green255 = 255, blue255 = 255, alpha01 = 0f))
+                        context.fillStyle(grad)
+                        context.beginPath()
+                        context.moveTo(cx(0), padT + chartH)
+                        context.lineTo(cx(0), cy(0))
+                        for (i in 1 until pts.size) context.lineTo(cx(i), cy(i))
+                        context.lineTo(cx(pts.lastIndex), padT + chartH)
+                        context.closePath(); context.fill()
+                    }
+
+                    context.lineWidth(series.lineWidth)
+                    context.strokeStyle(series.color)
+                    context.lineCapRound()
+                    context.beginPath()
+                    context.moveTo(cx(0), cy(0))
+                    for (i in 1 until pts.size) context.lineTo(cx(i), cy(i))
+                    context.stroke()
+
+                    pts.forEachIndexed { i, _ ->
+                        context.fillStyle(series.color)
+                        context.beginPath()
+                        context.arc(cx(i), cy(i), series.dotRadius, 0f, (2 * PI).toFloat())
+                        context.fill()
+                    }
+                }
+
+                // X labels
+                if (a.showAxisLabels) {
+                    context.font(a.labelFontSize)
+                    context.fillStyle(Color(0xFF888888L))
+                    context.textAlign(TextAlign.CENTER)
+                    labels.forEachIndexed { i, lbl ->
+                        context.fillText(lbl, padL + i * slotW + slotW / 2f, padT + chartH + 16f)
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun ViewContainer<*, *>.MixedChart(init: MixedChartView.() -> Unit) {
+    addChild(MixedChartView(), init)
+}
+
 data class CandleStick(
     val label: String,
     val open: Float,
