@@ -39,6 +39,8 @@ import com.tencent.kuiklybase.chart.BubbleData
 import com.tencent.kuiklybase.chart.SankeyChart
 import com.tencent.kuiklybase.chart.SankeyNode
 import com.tencent.kuiklybase.chart.SankeyLink
+import com.tencent.kuiklybase.chart.NightingaleRoseChart
+import com.tencent.kuiklybase.chart.RoseSlice
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -53,6 +55,7 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
     private var lastBoxplotClick by observable("")
     private var lastBubbleClick by observable("")
     private var lastSankeyClick by observable("")
+    private var lastRoseClick by observable("")
     private var gaugeValue by observable(72f)
 
     override fun body(): ViewBuilder {
@@ -882,6 +885,55 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                 Text {
                     attr {
                         text(ctx.lastSankeyClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 32f)
+                    }
+                }
+
+                // ── NightingaleRoseChart ──────────────────────────────────
+                Text {
+                    attr {
+                        text("玫瑰图 - NightingaleRoseChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(260f)
+                        margin(left = 16f, right = 16f, bottom = 8f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    NightingaleRoseChart {
+                        attr {
+                            allFill()
+                            slices(
+                                RoseSlice("Q1", 320f, Color(0xFF1677FFL)),
+                                RoseSlice("Q2", 480f, Color(0xFF36CFDBL)),
+                                RoseSlice("Q3", 560f, Color(0xFF52C41AL)),
+                                RoseSlice("Q4", 410f, Color(0xFFFA8C16L)),
+                                RoseSlice("Q5", 290f, Color(0xFFFF4D4FL)),
+                                RoseSlice("Q6", 640f, Color(0xFF722ED1L)),
+                            )
+                            showPercentage(true)
+                            showCenter(true)
+                            centerText("收入")
+                            innerRadius(0.25f)
+                            labelFontSize(10f)
+                        }
+                        event {
+                            onSliceClick { slice, idx ->
+                                ctx.lastRoseClick = "点击: ${slice.label} = ${slice.value}"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastRoseClick)
                         fontSize(12f)
                         color(Color(0xFF1677FFL))
                         margin(left = 16f, top = 4f, bottom = 32f)
