@@ -788,6 +788,105 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                         margin(left = 16f, top = 4f, bottom = 16f)
                     }
                 }
+
+                // Bubble Chart section
+                Text {
+                    attr {
+                        text("气泡图 - BubbleChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(220f)
+                        margin(left = 16f, right = 16f, bottom = 8f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    BubbleChart {
+                        attr {
+                            size(Float.NaN, 220f)
+                            showLabels(true)
+                            points(
+                                BubbleData(10f, 20f, 30f, "A", Color(0xFF1677FFL)),
+                                BubbleData(25f, 55f, 60f, "B", Color(0xFF52C41AL)),
+                                BubbleData(40f, 30f, 45f, "C", Color(0xFFFA8C16L)),
+                                BubbleData(60f, 70f, 80f, "D", Color(0xFFFF4D4FL)),
+                                BubbleData(75f, 40f, 35f, "E", Color(0xFF722ED1L)),
+                                BubbleData(85f, 85f, 50f, "F", Color(0xFF13C2C2L)),
+                            )
+                        }
+                        event {
+                            onBubbleClick { b ->
+                                ctx.lastBubbleClick = "点击: ${b.label} (${b.x.toInt()}, ${b.y.toInt()}) r=${b.r.toInt()}"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastBubbleClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 16f)
+                    }
+                }
+
+                // Sankey Chart section
+                Text {
+                    attr {
+                        text("桑基图 - SankeyChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(240f)
+                        margin(left = 16f, right = 16f, bottom = 32f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    SankeyChart {
+                        attr {
+                            size(Float.NaN, 240f)
+                            nodes(
+                                SankeyNode("a", "访问"),
+                                SankeyNode("b", "注册"),
+                                SankeyNode("c", "购物车"),
+                                SankeyNode("d", "结算"),
+                                SankeyNode("e", "成交"),
+                                SankeyNode("f", "流失"),
+                            )
+                            links(
+                                SankeyLink("a", "b", 800f),
+                                SankeyLink("a", "f", 200f),
+                                SankeyLink("b", "c", 600f),
+                                SankeyLink("b", "f", 200f),
+                                SankeyLink("c", "d", 450f),
+                                SankeyLink("c", "f", 150f),
+                                SankeyLink("d", "e", 380f),
+                                SankeyLink("d", "f", 70f),
+                            )
+                        }
+                        event {
+                            onNodeClick { n ->
+                                ctx.lastSankeyClick = "点击节点: ${n.label}"
+                            }
+                        }
+                    }
+                }
+                Text {
+                    attr {
+                        text(ctx.lastSankeyClick)
+                        fontSize(12f)
+                        color(Color(0xFF1677FFL))
+                        margin(left = 16f, top = 4f, bottom = 32f)
+                    }
+                }
             }
         }
     }
