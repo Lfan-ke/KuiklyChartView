@@ -23,6 +23,8 @@ import com.tencent.kuikly.core.base.ViewBuilder
 import com.tencent.kuikly.core.base.ViewContainer
 import com.tencent.kuikly.core.base.event.ClickParams
 import com.tencent.kuikly.core.reactive.handler.observable
+import com.tencent.kuikly.core.views.CanvasLinearGradient
+import com.tencent.kuikly.core.views.TextAlign
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -30,6 +32,37 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
+
+/**
+ * Pre-built color palettes for chart series.
+ * Inspired by ECharts, Ant Design Charts, and Material Design.
+ */
+object ChartTheme {
+    /** Ant Design / KuiklyUI brand palette. */
+    val Default: List<Color> = listOf(
+        Color(0xFF1677FFL), Color(0xFF36CFDBL), Color(0xFF52C41AL),
+        Color(0xFFFA8C16L), Color(0xFFFF4D4FL), Color(0xFF722ED1L),
+        Color(0xFFEB2F96L), Color(0xFF13C2C2L),
+    )
+    /** ECharts default palette. */
+    val ECharts: List<Color> = listOf(
+        Color(0xFF5470C6L), Color(0xFF91CC75L), Color(0xFFFAC858L),
+        Color(0xFFEE6666L), Color(0xFF73C0DEL), Color(0xFF3BA272L),
+        Color(0xFFFC8452L), Color(0xFF9A60B4L), Color(0xFFEA7CCCL),
+    )
+    /** Material Design vibrant palette. */
+    val Material: List<Color> = listOf(
+        Color(0xFF2196F3L), Color(0xFF4CAF50L), Color(0xFFFFC107L),
+        Color(0xFFF44336L), Color(0xFF9C27B0L), Color(0xFF00BCD4L),
+        Color(0xFFFF5722L), Color(0xFF607D8BL),
+    )
+    /** Soft pastel palette for lighter UIs. */
+    val Pastel: List<Color> = listOf(
+        Color(0xFF74B9FFL), Color(0xFF55EFC4L), Color(0xFFFDCB6EL),
+        Color(0xFFFF7675L), Color(0xFFA29BFEL), Color(0xFF00B894L),
+        Color(0xFFE17055L), Color(0xFFDFE6E9L),
+    )
+}
 
 fun ViewContainer<*, *>.LineChart(init: LineChartView.() -> Unit) {
     addChild(LineChartView(), init)
@@ -52,8 +85,8 @@ open class ChartAttr : ComposeAttr() {
     internal var seriesList by observable(emptyList<ChartSeries>())
     internal var showGrid by observable(true)
     internal var showAxisLabels by observable(true)
-    internal var axisColor by observable(Color(180, 180, 180, 1f))
-    internal var gridColor by observable(Color(220, 220, 220, 1f))
+    internal var axisColor by observable(Color(0xFFB4B4B4L))
+    internal var gridColor by observable(Color(0xFFDCDCDCL))
     internal var labelFontSize by observable(11f)
     internal var gridLineCount by observable(4)
 
@@ -203,7 +236,14 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
 
                     if (ctx.attr.fillArea && n > 1) {
                         context.beginPath()
-                        context.fillStyle(Color(s.color.hexColor and 0x00FFFFFFL, 0.15f))
+                        val grad = context.createLinearGradient(0f, PADDING_TOP, 0f, PADDING_TOP + plotH)
+                        val rgb = s.color.hexColor
+                        val r = ((rgb shr 16) and 0xFF).toInt()
+                        val g = ((rgb shr 8) and 0xFF).toInt()
+                        val b = (rgb and 0xFF).toInt()
+                        grad.addColorStop(0f, Color(red255 = r, green255 = g, blue255 = b, alpha01 = 0.28f))
+                        grad.addColorStop(1f, Color(red255 = r, green255 = g, blue255 = b, alpha01 = 0.02f))
+                        context.fillStyle(grad)
                         context.moveTo(toX(0, n), PADDING_TOP + plotH)
                         s.points.forEachIndexed { idx, pt ->
                             context.lineTo(toX(idx, n), toY(pt.value))
@@ -216,6 +256,7 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
                     context.beginPath()
                     context.strokeStyle(s.color)
                     context.lineWidth(ctx.attr.lineWidth)
+                    context.lineCapRound()
                     s.points.forEachIndexed { idx, pt ->
                         val x = toX(idx, n)
                         val y = toY(pt.value)
@@ -575,6 +616,7 @@ class PieChartView : ComposeView<PieChartAttr, PieChartEvent>() {
 
                 if (ctx.attr.showLabels) {
                     context.font(ctx.attr.labelFontSize)
+                    context.textAlign(TextAlign.CENTER)
                     context.fillStyle(Color.WHITE)
                     angle = startAngleRad
                     slices.forEachIndexed { idx, slice ->
@@ -582,14 +624,12 @@ class PieChartView : ComposeView<PieChartAttr, PieChartEvent>() {
                         val midAngle = angle + sweep / 2f
                         val labelR = (innerR + outerR) / 2f
                         val lx = cx + labelR * cos(midAngle)
-                        val ly = cy + labelR * sin(midAngle)
+                        val ly = cy + labelR * sin(midAngle) + ctx.attr.labelFontSize * 0.35f
                         val pct = (slice.value / total * 100f).roundToInt()
-                        if (sweep > 0.26f) {
-                            val text = "$pct%"
-                            context.fillText(text, lx - text.length * 3f, ly + 4f)
-                        }
+                        if (sweep > 0.26f) context.fillText("$pct%", lx, ly)
                         angle += sweep
                     }
+                    context.textAlign(TextAlign.LEFT)
                 }
 
                 if (ctx.attr.showLegend) {
@@ -600,7 +640,7 @@ class PieChartView : ComposeView<PieChartAttr, PieChartEvent>() {
                         val lx = idx * slotW + 4f
                         context.fillStyle(slice.color)
                         context.fillRect(lx, legendY, 10f, 10f)
-                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillStyle(Color(0xFF505050L))
                         val label = if (slice.label.length > 6) slice.label.take(6) else slice.label
                         context.fillText(label, lx + 13f, legendY + 9f)
                     }
@@ -649,13 +689,13 @@ data class RadarSeries(
     val name: String,
     val values: List<Float>,
     val color: Color,
-    val fillColor: Color = Color(180, 180, 180, 0.2f),
+    val fillColor: Color = Color(red255 = 180, green255 = 180, blue255 = 180, alpha01 = 0.2f),
 )
 
 class RadarChartAttr : ComposeAttr() {
     internal var axes by observable(emptyList<RadarAxis>())
     internal var series by observable(emptyList<RadarSeries>())
-    internal var webColor by observable(Color(220, 220, 220, 1f))
+    internal var webColor by observable(Color(0xFFDCDCDCL))
     internal var webLevels by observable(4)
     internal var showAxisLabels by observable(true)
     internal var labelFontSize by observable(11f)
@@ -724,7 +764,7 @@ class RadarChartView : ComposeView<RadarChartAttr, RadarChartEvent>() {
 
                 if (a.showAxisLabels) {
                     context.font(a.labelFontSize)
-                    context.fillStyle(Color(80, 80, 80, 1f))
+                    context.fillStyle(Color(0xFF505050L))
                     for (i in 0 until n) {
                         val angle = 2f * PI.toFloat() * i / n - PI.toFloat() / 2f
                         val labelR = r + 18f
@@ -777,7 +817,7 @@ class RadarChartView : ComposeView<RadarChartAttr, RadarChartEvent>() {
                         val lx = idx * slotW + 4f
                         context.fillStyle(s.color)
                         context.fillRect(lx, legendY, 10f, 10f)
-                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillStyle(Color(0xFF505050L))
                         context.fillText(s.name.take(8), lx + 14f, legendY + 9f)
                     }
                 }
@@ -799,10 +839,10 @@ class GaugeChartAttr : ComposeAttr() {
     internal var minValue by observable(0f)
     internal var maxValue by observable(100f)
     internal var arcColor by observable(Color(0xFF1677FFL))
-    internal var trackColor by observable(Color(220, 220, 220, 1f))
+    internal var trackColor by observable(Color(0xFFDCDCDCL))
     internal var arcWidth by observable(16f)
     internal var showNeedle by observable(true)
-    internal var needleColor by observable(Color(80, 80, 80, 1f))
+    internal var needleColor by observable(Color(0xFF505050L))
     internal var label by observable("")
     internal var unit by observable("")
     internal var showMinMax by observable(true)
@@ -879,7 +919,7 @@ class GaugeChartView : ComposeView<GaugeChartAttr, ComposeEvent>() {
 
                 if (a.showMinMax) {
                     context.font(a.labelFontSize)
-                    context.fillStyle(Color(120, 120, 120, 1f))
+                    context.fillStyle(Color(0xFF787878L))
                     val labelR = r + 6f
                     val minX = cx + labelR * cos(startRad)
                     val minY = cy + labelR * sin(startRad)
@@ -890,14 +930,14 @@ class GaugeChartView : ComposeView<GaugeChartAttr, ComposeEvent>() {
                 }
 
                 context.font(a.valueFontSize)
-                context.fillStyle(Color(40, 40, 40, 1f))
+                context.fillStyle(Color(0xFF282828L))
                 val valText = if (a.unit.isEmpty()) clampedValue.fmt1() else "${clampedValue.fmt0()}${a.unit}"
                 val valW = valText.length * a.valueFontSize * 0.55f
                 context.fillText(valText, cx - valW / 2f, cy + r * 0.1f)
 
                 if (a.label.isNotEmpty()) {
                     context.font(a.labelFontSize)
-                    context.fillStyle(Color(120, 120, 120, 1f))
+                    context.fillStyle(Color(0xFF787878L))
                     val lblW = a.label.length * a.labelFontSize * 0.55f
                     context.fillText(a.label, cx - lblW / 2f, cy + r * 0.1f + a.valueFontSize + 4f)
                 }
@@ -931,8 +971,8 @@ class ScatterChartAttr : ComposeAttr() {
     internal var seriesList by observable(emptyList<ScatterSeries>())
     internal var showGrid by observable(true)
     internal var showAxisLabels by observable(true)
-    internal var axisColor by observable(Color(180, 180, 180, 1f))
-    internal var gridColor by observable(Color(220, 220, 220, 1f))
+    internal var axisColor by observable(Color(0xFFB4B4B4L))
+    internal var gridColor by observable(Color(0xFFDCDCDCL))
     internal var labelFontSize by observable(11f)
     internal var showLegend by observable(true)
     internal var xAxisLabel by observable("")
@@ -1027,7 +1067,7 @@ class ScatterChartView : ComposeView<ScatterChartAttr, ScatterChartEvent>() {
 
                 if (a.showAxisLabels) {
                     context.font(a.labelFontSize)
-                    context.fillStyle(Color(100, 100, 100, 1f))
+                    context.fillStyle(Color(0xFF646464L))
                     val gridLines = 4
                     for (i in 0..gridLines) {
                         val xVal = xMin + xRange * i / gridLines
@@ -1059,7 +1099,7 @@ class ScatterChartView : ComposeView<ScatterChartAttr, ScatterChartEvent>() {
                         context.arc(lx + 5f, legendY + 5f, 5f, 0f, 2f * PI.toFloat(), false)
                         context.fillStyle(s.color)
                         context.fill()
-                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillStyle(Color(0xFF505050L))
                         context.fillText(s.name.take(8), lx + 14f, legendY + 9f)
                     }
                 }
@@ -1202,7 +1242,7 @@ class FunnelChartView : ComposeView<FunnelChartAttr, FunnelChartEvent>() {
                         val lx = idx * slotW + 4f
                         context.fillStyle(slice.color)
                         context.fillRect(lx, legendY, 10f, 10f)
-                        context.fillStyle(Color(80, 80, 80, 1f))
+                        context.fillStyle(Color(0xFF505050L))
                         context.fillText(slice.label.take(6), lx + 14f, legendY + 9f)
                     }
                 }
