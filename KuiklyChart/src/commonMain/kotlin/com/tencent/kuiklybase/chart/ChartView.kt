@@ -1822,3 +1822,213 @@ class TreemapChartView : ComposeView<TreemapChartAttr, TreemapChartEvent>() {
         else -> "${v.toInt()}"
     }
 }
+
+fun ViewContainer<*, *>.BoxplotChart(init: BoxplotChartView.() -> Unit) {
+    addChild(BoxplotChartView(), init)
+}
+
+data class BoxplotData(
+    val label: String,
+    val min: Float,
+    val q1: Float,
+    val median: Float,
+    val q3: Float,
+    val max: Float,
+    val outliers: List<Float> = emptyList(),
+    val color: Color? = null,
+)
+
+class BoxplotChartAttr : ComposeAttr() {
+    internal var boxes by observable(emptyList<BoxplotData>())
+    internal var defaultColor by observable(Color(0xFF1677FFL))
+    internal var medianColor by observable(Color(0xFFFF4D4FL))
+    internal var boxWidthFraction by observable(0.5f)
+    internal var showGrid by observable(true)
+    internal var showOutliers by observable(true)
+    internal var axisFontSize by observable(11f)
+    internal var axisColor by observable(Color(0xFFB4B4B4L))
+    internal var gridColor by observable(Color(0xFFDCDCDCL))
+
+    fun boxes(vararg b: BoxplotData) { boxes = b.toList() }
+    fun boxes(list: List<BoxplotData>) { boxes = list }
+    fun defaultColor(c: Color) { defaultColor = c }
+    fun medianColor(c: Color) { medianColor = c }
+    fun boxWidthFraction(f: Float) { boxWidthFraction = f.coerceIn(0.2f, 0.9f) }
+    fun showGrid(show: Boolean) { showGrid = show }
+    fun showOutliers(show: Boolean) { showOutliers = show }
+    fun axisFontSize(sz: Float) { axisFontSize = sz.coerceAtLeast(8f) }
+    fun size(w: Float, h: Float) {
+        if (!w.isNaN()) width(w)
+        if (!h.isNaN()) height(h)
+    }
+}
+
+class BoxplotChartEvent : ComposeEvent() {
+    internal var onBoxClick: ((BoxplotData) -> Unit)? = null
+    fun onBoxClick(action: (BoxplotData) -> Unit) { onBoxClick = action }
+}
+
+class BoxplotChartView : ComposeView<BoxplotChartAttr, BoxplotChartEvent>() {
+    private var lastW = 0f
+    private var lastH = 0f
+
+    override fun createAttr(): BoxplotChartAttr = BoxplotChartAttr()
+    override fun createEvent(): BoxplotChartEvent = BoxplotChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { allFill() }
+                event { click { params -> ctx.handleClick(params) } }
+            }) { context, w, h ->
+                ctx.lastW = w
+                ctx.lastH = h
+                val a = ctx.attr
+                val boxes = a.boxes
+                if (boxes.isEmpty()) return@Canvas
+
+                val padL = PADDING_LEFT
+                val padR = PADDING_RIGHT
+                val padT = PADDING_TOP
+                val padB = PADDING_BOTTOM
+                val chartW = w - padL - padR
+                val chartH = h - padT - padB
+
+                val allVals = boxes.flatMap { b ->
+                    listOf(b.min, b.q1, b.median, b.q3, b.max) + b.outliers
+                }
+                val dataMin = allVals.minOrNull() ?: 0f
+                val dataMax = allVals.maxOrNull() ?: 1f
+                val range = (dataMax - dataMin).takeIf { it > 1e-6f } ?: 1f
+                val margin = range * 0.1f
+                val yMin = dataMin - margin
+                val yMax = dataMax + margin
+                val yRange = yMax - yMin
+
+                fun toY(v: Float): Float = padT + chartH * (1f - (v - yMin) / yRange)
+
+                if (a.showGrid) {
+                    context.strokeStyle(a.gridColor)
+                    context.lineWidth(0.5f)
+                    val steps = 4
+                    repeat(steps + 1) { i ->
+                        val y = padT + chartH * i / steps
+                        context.beginPath()
+                        context.moveTo(padL, y)
+                        context.lineTo(padL + chartW, y)
+                        context.stroke()
+                    }
+                }
+
+                context.strokeStyle(a.axisColor)
+                context.lineWidth(1f)
+                context.beginPath()
+                context.moveTo(padL, padT)
+                context.lineTo(padL, padT + chartH)
+                context.lineTo(padL + chartW, padT + chartH)
+                context.stroke()
+
+                context.font(a.axisFontSize)
+                context.fillStyle(Color(0xFF505050L))
+                val steps = 4
+                repeat(steps + 1) { i ->
+                    val v = yMin + yRange * (steps - i) / steps
+                    val y = padT + chartH * i / steps
+                    val label = v.fmt1()
+                    context.fillText(label, 2f, y + a.axisFontSize * 0.35f)
+                }
+
+                val slotW = chartW / boxes.size
+                boxes.forEachIndexed { idx, box ->
+                    val cx = padL + idx * slotW + slotW / 2f
+                    val bw = slotW * a.boxWidthFraction
+                    val color = box.color ?: a.defaultColor
+
+                    val yQ1 = toY(box.q1)
+                    val yQ3 = toY(box.q3)
+                    val yMed = toY(box.median)
+                    val yMinV = toY(box.min)
+                    val yMaxV = toY(box.max)
+
+                    context.strokeStyle(color)
+                    context.lineWidth(1.5f)
+                    context.beginPath()
+                    context.moveTo(cx, yMinV)
+                    context.lineTo(cx, yQ1)
+                    context.stroke()
+                    context.beginPath()
+                    context.moveTo(cx, yQ3)
+                    context.lineTo(cx, yMaxV)
+                    context.stroke()
+
+                    context.beginPath()
+                    context.moveTo(cx - bw * 0.3f, yMinV)
+                    context.lineTo(cx + bw * 0.3f, yMinV)
+                    context.stroke()
+                    context.beginPath()
+                    context.moveTo(cx - bw * 0.3f, yMaxV)
+                    context.lineTo(cx + bw * 0.3f, yMaxV)
+                    context.stroke()
+
+                    val grad = context.createLinearGradient(cx - bw / 2f, yQ3, cx + bw / 2f, yQ1)
+                    grad.addColorStop(0f, Color(
+                        red255 = ((color.hexColor shr 16) and 0xFFL).toInt(),
+                        green255 = ((color.hexColor shr 8) and 0xFFL).toInt(),
+                        blue255 = (color.hexColor and 0xFFL).toInt(),
+                        alpha01 = 0.25f,
+                    ))
+                    grad.addColorStop(1f, Color(
+                        red255 = ((color.hexColor shr 16) and 0xFFL).toInt(),
+                        green255 = ((color.hexColor shr 8) and 0xFFL).toInt(),
+                        blue255 = (color.hexColor and 0xFFL).toInt(),
+                        alpha01 = 0.08f,
+                    ))
+                    context.fillStyle(grad)
+                    context.fillRect(cx - bw / 2f, yQ3, bw, (yQ1 - yQ3).coerceAtLeast(1f))
+
+                    context.strokeStyle(color)
+                    context.lineWidth(1.5f)
+                    context.beginPath()
+                    context.moveTo(cx - bw / 2f, yQ3)
+                    context.lineTo(cx + bw / 2f, yQ3)
+                    context.lineTo(cx + bw / 2f, yQ1)
+                    context.lineTo(cx - bw / 2f, yQ1)
+                    context.closePath()
+                    context.stroke()
+
+                    context.strokeStyle(a.medianColor)
+                    context.lineWidth(2f)
+                    context.beginPath()
+                    context.moveTo(cx - bw / 2f, yMed)
+                    context.lineTo(cx + bw / 2f, yMed)
+                    context.stroke()
+
+                    if (a.showOutliers) {
+                        context.fillStyle(color)
+                        box.outliers.forEach { ov ->
+                            val oy = toY(ov)
+                            context.beginPath()
+                            context.arc(cx, oy, 3f, 0f, 2f * PI.toFloat(), false)
+                            context.fill()
+                        }
+                    }
+
+                    context.font(a.axisFontSize)
+                    context.fillStyle(Color(0xFF505050L))
+                    val lbl = box.label.take(5)
+                    context.fillText(lbl, cx - lbl.length * a.axisFontSize * 0.3f, padT + chartH + 18f)
+                }
+            }
+        }
+    }
+
+    private fun handleClick(params: ClickParams) {
+        val a = attr
+        if (lastW <= 0f || lastH <= 0f || a.boxes.isEmpty()) return
+        val chartW = lastW - PADDING_LEFT - PADDING_RIGHT
+        val slotW = chartW / a.boxes.size
+        val idx = ((params.x - PADDING_LEFT) / slotW).toInt().coerceIn(0, a.boxes.size - 1)
+        event.onBoxClick?.invoke(a.boxes[idx])
+    }
+}
