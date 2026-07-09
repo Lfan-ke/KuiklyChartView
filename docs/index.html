@@ -916,6 +916,7 @@ body {
 
 .scroll-top.show { opacity: 1; pointer-events: auto; }
 .scroll-top:hover { transform: translateY(-3px); background: var(--accent-hover); }
+code,pre,kbd,samp{font-family:'JetBrains Mono','Fira Code',Consolas,Menlo,monospace}
 </style>
 <script>(function(){var s;try{s=localStorage.getItem('kcv-theme')}catch(e){}if(!s)s=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s)})()</script>
 </head>
@@ -2267,7 +2268,7 @@ function renderHeatmapChart(canvas, data, opts, colors) {
         ctx.fillRect(x, y, cellW - gap, cellH - gap);
       }
       if (opts.values && cellW > 20 && cellH > 14) {
-        ctx.fillStyle = t > 0.55 ? '#fff' : '#334155';
+        ctx.fillStyle = t > 0.55 ? '#fff' : (isDark() ? '#e2e8f0' : '#334155');
         ctx.font = '8px -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
