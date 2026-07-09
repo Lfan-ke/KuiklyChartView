@@ -2379,3 +2379,166 @@ class SankeyChartView : ComposeView<SankeyChartAttr, SankeyChartEvent>() {
         }
     }
 }
+
+// ─── NightingaleRoseChart ─────────────────────────────────────────────────────
+
+fun ViewContainer<*, *>.NightingaleRoseChart(init: NightingaleRoseView.() -> Unit) {
+    addChild(NightingaleRoseView(), init)
+}
+
+data class RoseSlice(
+    val label: String,
+    val value: Float,
+    val color: Color? = null,
+)
+
+class NightingaleRoseAttr : ComposeAttr() {
+    internal var slices by observable(emptyList<RoseSlice>())
+    internal var innerRadius by observable(0f)
+    internal var outerRadius by observable(0.85f)
+    internal var minRadius by observable(0.25f)
+    internal var showLabels by observable(true)
+    internal var labelFontSize by observable(11f)
+    internal var showCenter by observable(false)
+    internal var centerText by observable("")
+    internal var defaultColors by observable(ChartTheme.Default)
+    internal var showPercentage by observable(false)
+
+    fun slices(vararg s: RoseSlice) { slices = s.toList() }
+    fun slices(list: List<RoseSlice>) { slices = list }
+    fun innerRadius(r: Float) { innerRadius = r.coerceIn(0f, 0.6f) }
+    fun outerRadius(r: Float) { outerRadius = r.coerceIn(0.4f, 0.98f) }
+    fun minRadius(r: Float) { minRadius = r.coerceIn(0.05f, 0.5f) }
+    fun showLabels(show: Boolean) { showLabels = show }
+    fun labelFontSize(s: Float) { labelFontSize = s }
+    fun showCenter(show: Boolean) { showCenter = show }
+    fun centerText(t: String) { centerText = t }
+    fun theme(t: List<Color>) { defaultColors = t }
+    fun showPercentage(show: Boolean) { showPercentage = show }
+}
+
+class NightingaleRoseEvent : ComposeEvent() {
+    var onSliceClick: ((RoseSlice, Int) -> Unit)? = null
+    fun onSliceClick(b: (RoseSlice, Int) -> Unit) { onSliceClick = b }
+}
+
+class NightingaleRoseView : ComposeView<NightingaleRoseAttr, NightingaleRoseEvent>() {
+    override fun createAttr(): NightingaleRoseAttr = NightingaleRoseAttr()
+    override fun createEvent(): NightingaleRoseEvent = NightingaleRoseEvent()
+
+    // Cached geometry for click hit-testing
+    private var lastCx = 0f
+    private var lastCy = 0f
+    private var lastInnerHole = 0f
+    private var lastMinR = 0f
+    private var lastMaxR = 0f
+    private var lastMaxVal = 0.001f
+    private var lastAngleStep = 0f
+
+    private fun handleClick(params: ClickParams) {
+        val handler = event.onSliceClick ?: return
+        val slices = attr.slices
+        if (slices.isEmpty()) return
+        val tx = params.x - lastCx
+        val ty = params.y - lastCy
+        val dist = sqrt(tx * tx + ty * ty)
+        if (dist < lastInnerHole || dist > lastMaxR) return
+        var angle = atan2(ty, tx)
+        val startBase = -PI.toFloat() / 2f
+        while (angle < startBase) angle += 2f * PI.toFloat()
+        slices.forEachIndexed { i, slice ->
+            val startAngle = startBase + i * lastAngleStep
+            val endAngle = startAngle + lastAngleStep * 0.9f
+            val r = lastMinR + (lastMaxR - lastMinR) * (slice.value / lastMaxVal)
+            val normalizedAngle = if (angle < startAngle) angle + 2f * PI.toFloat() else angle
+            if (normalizedAngle in startAngle..endAngle && dist <= r) {
+                handler(slice, i)
+                return
+            }
+        }
+    }
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({
+                attr { allFill() }
+                event { click { params -> ctx.handleClick(params) } }
+            }) { context, width, height ->
+                val a = ctx.attr
+                if (a.slices.isEmpty()) return@Canvas
+                val cx = width / 2f
+                val cy = height / 2f
+                val maxR = minOf(cx, cy) * a.outerRadius
+                val innerHole = a.innerRadius * maxR
+                val minR = (maxR * a.minRadius).coerceAtLeast(innerHole + 2f)
+                val maxVal = a.slices.maxOf { it.value }.coerceAtLeast(0.001f)
+                val total = a.slices.sumOf { it.value.toDouble() }.toFloat().coerceAtLeast(0.001f)
+                val n = a.slices.size
+                val angleStep = (2f * PI / n).toFloat()
+
+                ctx.lastCx = cx
+                ctx.lastCy = cy
+                ctx.lastInnerHole = innerHole
+                ctx.lastMinR = minR
+                ctx.lastMaxR = maxR
+                ctx.lastMaxVal = maxVal
+                ctx.lastAngleStep = angleStep
+
+                a.slices.forEachIndexed { i, slice ->
+                    val startAngle = -PI.toFloat() / 2f + i * angleStep
+                    val endAngle = startAngle + angleStep * 0.9f
+                    val r = minR + (maxR - minR) * (slice.value / maxVal)
+                    val color = slice.color ?: a.defaultColors[i % a.defaultColors.size]
+
+                    val midAngle = (startAngle + endAngle) / 2f
+                    val gx0 = cx + minR * cos(midAngle)
+                    val gy0 = cy + minR * sin(midAngle)
+                    val gx1 = cx + r * cos(midAngle)
+                    val gy1 = cy + r * sin(midAngle)
+                    val rgb = color.hexColor
+                    val ri = ((rgb shr 16) and 0xFF).toInt()
+                    val gi = ((rgb shr 8) and 0xFF).toInt()
+                    val bi = (rgb and 0xFF).toInt()
+                    val grad = context.createLinearGradient(gx0, gy0, gx1, gy1)
+                    grad.addColorStop(0f, Color(red255 = ri, green255 = gi, blue255 = bi, alpha01 = 0.7f))
+                    grad.addColorStop(1f, Color(red255 = ri, green255 = gi, blue255 = bi, alpha01 = 1f))
+                    context.fillStyle(grad)
+
+                    context.beginPath()
+                    if (innerHole > 0f) {
+                        context.moveTo(cx + innerHole * cos(startAngle), cy + innerHole * sin(startAngle))
+                        context.lineTo(cx + r * cos(startAngle), cy + r * sin(startAngle))
+                        context.arc(cx, cy, r, startAngle, endAngle, false)
+                        context.arc(cx, cy, innerHole, endAngle, startAngle, true)
+                    } else {
+                        context.moveTo(cx, cy)
+                        context.arc(cx, cy, r, startAngle, endAngle, false)
+                    }
+                    context.closePath()
+                    context.fill()
+
+                    if (a.showLabels) {
+                        val labelAngle = midAngle
+                        val labelR = r + 14f
+                        val lx = cx + labelR * cos(labelAngle)
+                        val ly = cy + labelR * sin(labelAngle) + a.labelFontSize * 0.35f
+                        context.font(a.labelFontSize)
+                        context.fillStyle(Color(0xFF333333L))
+                        context.textAlign(TextAlign.CENTER)
+                        val pct = (slice.value / total * 100).toInt()
+                        val lbl = if (a.showPercentage) "${slice.label} $pct%" else slice.label
+                        context.fillText(lbl, lx, ly)
+                    }
+                }
+
+                if (a.showCenter && a.centerText.isNotEmpty()) {
+                    context.font(14f)
+                    context.fillStyle(Color(0xFF333333L))
+                    context.textAlign(TextAlign.CENTER)
+                    context.fillText(a.centerText, cx, cy + 5f)
+                }
+            }
+        }
+    }
+}
