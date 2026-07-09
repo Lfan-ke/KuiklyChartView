@@ -575,6 +575,122 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
 }
 
 // ---------------------------------------------------------------------------
+// StackedBarChart
+// ---------------------------------------------------------------------------
+
+fun ViewContainer<*, *>.StackedBarChart(init: StackedBarChartView.() -> Unit) {
+    addChild(StackedBarChartView(), init)
+}
+
+class StackedBarChartAttr : BarChartAttr() {
+    internal var percentMode by observable(false)
+    internal var showValues by observable(true)
+
+    fun percentMode(enable: Boolean) { percentMode = enable }
+    override fun showValueLabels(show: Boolean) { showValues = show }
+}
+
+class StackedBarChartView : ComposeView<StackedBarChartAttr, ChartEvent>() {
+
+    override fun createAttr(): StackedBarChartAttr = StackedBarChartAttr()
+    override fun createEvent(): ChartEvent = ChartEvent()
+
+    override fun body(): ViewBuilder {
+        val ctx = this
+        return {
+            Canvas({ attr { absolutePositionAllZero() } }) { context, w, h ->
+                val a = ctx.attr
+                val series = a.seriesList
+                if (series.isEmpty()) return@Canvas
+
+                val nGroups = series.maxOfOrNull { it.points.size } ?: return@Canvas
+                val plotW = w - PADDING_LEFT - PADDING_RIGHT
+                val plotH = h - PADDING_TOP - PADDING_BOTTOM
+                val slotW = plotW / nGroups
+                val barW = slotW * (1f - a.barSpacing.coerceIn(0f, 0.8f))
+                val barOffset = (slotW - barW) / 2f
+
+                // Compute column totals for scaling
+                val colTotals = FloatArray(nGroups) { g ->
+                    series.sumOf { s -> s.points.getOrNull(g)?.value?.toDouble() ?: 0.0 }.toFloat()
+                }
+                val globalMax = if (a.percentMode) 1f else (colTotals.maxOrNull()?.takeIf { it > 0f } ?: 1f)
+
+                // Draw grid
+                if (a.showGrid) {
+                    val steps = a.gridLineCount.coerceIn(2, 10)
+                    context.beginPath()
+                    context.strokeStyle(a.gridColor)
+                    context.lineWidth(0.5f)
+                    for (i in 0..steps) {
+                        val y = PADDING_TOP + plotH * i / steps
+                        context.moveTo(PADDING_LEFT, y)
+                        context.lineTo(w - PADDING_RIGHT, y)
+                    }
+                    context.stroke()
+                }
+
+                // Draw stacked bars
+                for (g in 0 until nGroups) {
+                    val colTotal = colTotals[g].takeIf { it > 0f } ?: continue
+                    val x = PADDING_LEFT + barOffset + g * slotW
+                    var baseY = PADDING_TOP + plotH
+
+                    series.forEach { s ->
+                        val raw = s.points.getOrNull(g)?.value ?: 0f
+                        if (raw <= 0f) return@forEach
+                        val fraction = if (a.percentMode) raw / colTotal else raw / globalMax
+                        val segH = (plotH * fraction).coerceAtLeast(1f)
+                        val segY = baseY - segH
+
+                        context.beginPath()
+                        if (a.cornerRadius > 0f && baseY == PADDING_TOP + plotH) {
+                            val r = a.cornerRadius.coerceAtMost(segH / 2f)
+                            context.moveTo(x + r, segY)
+                            context.lineTo(x + barW - r, segY)
+                            context.quadraticCurveTo(x + barW, segY, x + barW, segY + r)
+                            context.lineTo(x + barW, segY + segH)
+                            context.lineTo(x, segY + segH)
+                            context.lineTo(x, segY + r)
+                            context.quadraticCurveTo(x, segY, x + r, segY)
+                        } else {
+                            context.moveTo(x, segY)
+                            context.lineTo(x + barW, segY)
+                            context.lineTo(x + barW, baseY)
+                            context.lineTo(x, baseY)
+                        }
+                        context.closePath()
+                        context.fillStyle(s.color)
+                        context.fill()
+
+                        if (a.showValues && segH > 14f) {
+                            val label = if (a.percentMode) "${(fraction * 100).toInt()}%" else raw.fmt1()
+                            context.font(a.labelFontSize)
+                            context.fillStyle(Color.WHITE)
+                            context.textAlign(TextAlign.CENTER)
+                            context.fillText(label, x + barW / 2f, segY + segH / 2f + a.labelFontSize * 0.35f)
+                            context.textAlign(TextAlign.LEFT)
+                        }
+
+                        baseY = segY
+                    }
+
+                    // X axis labels
+                    if (a.showAxisLabels) {
+                        val lbl = series.firstOrNull()?.points?.getOrNull(g)?.label ?: continue
+                        context.font(a.labelFontSize)
+                        context.fillStyle(a.axisColor)
+                        context.textAlign(TextAlign.CENTER)
+                        context.fillText(lbl, x + barW / 2f, h - PADDING_BOTTOM + a.labelFontSize + 2f)
+                        context.textAlign(TextAlign.LEFT)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // AreaChart - LineChart with fill enabled by default
 // ---------------------------------------------------------------------------
 

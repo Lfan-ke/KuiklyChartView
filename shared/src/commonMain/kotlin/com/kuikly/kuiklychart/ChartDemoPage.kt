@@ -50,6 +50,7 @@ import com.tencent.kuiklybase.chart.RoseSlice
 import com.tencent.kuiklybase.chart.SparklineChart
 import com.tencent.kuiklybase.chart.ProgressRingChart
 import com.tencent.kuiklybase.chart.RingData
+import com.tencent.kuiklybase.chart.StackedBarChart
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
@@ -209,6 +210,64 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                             onPointClick { sIdx, pIdx, value ->
                                 ctx.lastClick = "柱状图 系列$sIdx 组$pIdx 值=${value.fmt()}"
                             }
+                        }
+                    }
+                }
+
+                // Stacked Bar Chart section
+                Text {
+                    attr {
+                        text("堆叠柱状图 - StackedBarChart")
+                        fontSize(14f)
+                        color(Color(0x666666))
+                        margin(left = 16f, top = 24f, bottom = 8f)
+                    }
+                }
+                View {
+                    attr {
+                        height(220f)
+                        margin(left = 16f, right = 16f)
+                        backgroundColor(Color(0xFFFFFF))
+                        borderRadius(8f)
+                    }
+                    StackedBarChart {
+                        attr {
+                            size(Float.NaN, 220f)
+                            data(
+                                ChartSeries(
+                                    name = "产品A",
+                                    points = listOf(
+                                        ChartDataPoint("Q1", 35f),
+                                        ChartDataPoint("Q2", 42f),
+                                        ChartDataPoint("Q3", 38f),
+                                        ChartDataPoint("Q4", 50f),
+                                    ),
+                                    color = Color(0x5C7CFA),
+                                ),
+                                ChartSeries(
+                                    name = "产品B",
+                                    points = listOf(
+                                        ChartDataPoint("Q1", 28f),
+                                        ChartDataPoint("Q2", 33f),
+                                        ChartDataPoint("Q3", 41f),
+                                        ChartDataPoint("Q4", 37f),
+                                    ),
+                                    color = Color(0x2DC7A0),
+                                ),
+                                ChartSeries(
+                                    name = "产品C",
+                                    points = listOf(
+                                        ChartDataPoint("Q1", 18f),
+                                        ChartDataPoint("Q2", 22f),
+                                        ChartDataPoint("Q3", 25f),
+                                        ChartDataPoint("Q4", 30f),
+                                    ),
+                                    color = Color(0xF59E0B),
+                                ),
+                            )
+                            percentMode(false)
+                            showValueLabels(true)
+                            cornerRadius(3f)
                         }
                     }
                 }

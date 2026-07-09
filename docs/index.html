@@ -3442,15 +3442,19 @@ const dslGenerators = {
     return lines.join('\n');
   },
   StackedBarChart(state) {
+    const lbls = state.data.labels;
+    const pts = (si) => lbls.map((l,i) => 'ChartDataPoint(' + S(l) + ', ' + state.data.series[si].values[i] + 'f)').join(', ');
     return [
       F('StackedBarChart') + ' {',
-      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
-      '    ' + P('percentMode') + ' = ' + K(String(!!state.opts.percent)),
-      '    ' + P('showValues') + ' = ' + K(String(!!state.opts.values)),
-      '    ' + F('series') + '(' + S('产品A') + ') { data(' + state.data.series[0].values.join(', ') + ') }',
-      '    ' + F('series') + '(' + S('产品B') + ') { data(' + state.data.series[1].values.join(', ') + ') }',
-      '    ' + F('series') + '(' + S('产品C') + ') { data(' + state.data.series[2].values.join(', ') + ') }',
-      '    ' + F('xAxis') + '(listOf(' + state.data.labels.map(l => '"' + l + '"').join(', ') + '))',
+      '  ' + F('attr') + ' {',
+      '    ' + F('data') + '(',
+      '      ChartSeries(' + S('产品A') + ', listOf(' + pts(0) + '), Color(0x5C7CFAL)),',
+      '      ChartSeries(' + S('产品B') + ', listOf(' + pts(1) + '), Color(0x2DC7A0L)),',
+      '      ChartSeries(' + S('产品C') + ', listOf(' + pts(2) + '), Color(0xF59E0BL)),',
+      '    )',
+      '    ' + F('percentMode') + '(' + K(String(!!state.opts.percent)) + ')',
+      '    ' + F('showValueLabels') + '(' + K(String(!!state.opts.values)) + ')',
+      '  }',
       '}'
     ].join('\n');
   }
