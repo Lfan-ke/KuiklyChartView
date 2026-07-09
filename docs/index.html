@@ -13,13 +13,15 @@
    ============================================================ */
 :root {
   --sidebar-bg: #0d1117;
-  --sidebar-active: #1e3a5f;
-  --sidebar-text: #cbd5e1;
+  --sidebar-active: rgba(102,126,234,.18);
+  --sidebar-active-text: #f0f0ff;
+  --sidebar-text: #8b949e;
   --sidebar-text-dim: #64748b;
-  --sidebar-hover: #1e293b;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --main-bg: #f8fafc;
+  --sidebar-hover: rgba(255,255,255,.06);
+  --accent: #667eea;
+  --accent-hover: #5a67d8;
+  --accent-rgb: 102,126,234;
+  --main-bg: #f1f5f9;
   --card-bg: #ffffff;
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -217,7 +219,7 @@ body {
 
 .sidebar .search-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.2);
 }
 
 .sidebar .search-input::placeholder { color: #64748b; }
@@ -456,7 +458,7 @@ body {
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 6px;
-  background: rgba(59,130,246,0.1);
+  background: rgba(var(--accent-rgb),0.1);
   color: var(--accent);
   white-space: nowrap;
 }
@@ -645,7 +647,7 @@ body {
 
 .theme-option.active {
   border-color: var(--accent);
-  background: rgba(59,130,246,0.06);
+  background: rgba(var(--accent-rgb),0.06);
 }
 
 .theme-option input { display: none; }
@@ -682,13 +684,13 @@ body {
   justify-content: center;
   gap: 8px;
   transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb),0.3);
 }
 
 .btn-randomize:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb),0.4);
 }
 
 .btn-randomize:active { transform: translateY(0); }
