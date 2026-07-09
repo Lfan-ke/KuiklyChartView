@@ -4,6 +4,7 @@ import com.tencent.kuikly.core.annotations.Page
 import com.tencent.kuikly.core.base.Color
 import com.tencent.kuikly.core.base.ViewBuilder
 import com.tencent.kuikly.core.base.ViewContainer
+import com.tencent.kuikly.core.reactive.handler.observable
 import com.tencent.kuikly.core.views.Text
 import com.tencent.kuikly.core.views.View
 import com.tencent.kuiklybase.chart.BarChart
@@ -13,6 +14,8 @@ import com.tencent.kuiklybase.chart.LineChart
 
 @Page("ChartDemoPage")
 internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
+
+    private var lastClick by observable("")
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -82,6 +85,19 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                             fillArea(true)
                             lineWidth(2.5f)
                         }
+                        event {
+                            onPointClick { sIdx, pIdx, value ->
+                                ctx.lastClick = "折线图 系列$sIdx 点$pIdx 值=${value.fmt()}"
+                            }
+                        }
+                    }
+                    Text {
+                        attr {
+                            text(ctx.lastClick)
+                            fontSize(12f)
+                            color(Color(0x007AFF))
+                            margin(left = 16f, top = 4f)
+                        }
                     }
                 }
 
@@ -139,9 +155,19 @@ internal class ChartDemoPage : com.tencent.kuikly.core.pager.Pager() {
                             cornerRadius(4f)
                             barSpacing(0.25f)
                         }
+                        event {
+                            onPointClick { sIdx, pIdx, value ->
+                                ctx.lastClick = "柱状图 系列$sIdx 组$pIdx 值=${value.fmt()}"
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    private fun Float.fmt(): String {
+        val i = toInt()
+        return if (this == i.toFloat()) "$i" else String.format("%.1f", this)
     }
 }
