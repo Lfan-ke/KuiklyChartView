@@ -129,8 +129,8 @@ class LineChartView : ComposeView<LineChartAttr, ChartEvent>() {
     private var lastW = 0f
     private var lastH = 0f
 
-    override fun createAttr() = LineChartAttr()
-    override fun createEvent() = ChartEvent()
+    override fun createAttr(): LineChartAttr = LineChartAttr()
+    override fun createEvent(): ChartEvent = ChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -287,8 +287,8 @@ class BarChartView : ComposeView<BarChartAttr, ChartEvent>() {
     private var lastW = 0f
     private var lastH = 0f
 
-    override fun createAttr() = BarChartAttr()
-    override fun createEvent() = ChartEvent()
+    override fun createAttr(): BarChartAttr = BarChartAttr()
+    override fun createEvent(): ChartEvent = ChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -450,7 +450,7 @@ class AreaChartAttr : LineChartAttr() {
 }
 
 class AreaChartView : LineChartView() {
-    override fun createAttr() = AreaChartAttr()
+    override fun createAttr(): AreaChartAttr = AreaChartAttr()
 }
 
 // ---------------------------------------------------------------------------
@@ -510,8 +510,8 @@ class PieChartView : ComposeView<PieChartAttr, PieChartEvent>() {
     private var lastStartAngle = 0f
     private var lastSweepAngles = emptyList<Float>()
 
-    override fun createAttr() = PieChartAttr()
-    override fun createEvent() = PieChartEvent()
+    override fun createAttr(): PieChartAttr = PieChartAttr()
+    override fun createEvent(): PieChartEvent = PieChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -679,8 +679,8 @@ class RadarChartEvent : ComposeEvent() {
 }
 
 class RadarChartView : ComposeView<RadarChartAttr, RadarChartEvent>() {
-    override fun createAttr() = RadarChartAttr()
-    override fun createEvent() = RadarChartEvent()
+    override fun createAttr(): RadarChartAttr = RadarChartAttr()
+    override fun createEvent(): RadarChartEvent = RadarChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -825,7 +825,7 @@ class GaugeChartAttr : ComposeAttr() {
 }
 
 class GaugeChartView : ComposeView<GaugeChartAttr, ComposeEvent>() {
-    override fun createAttr() = GaugeChartAttr()
+    override fun createAttr(): GaugeChartAttr = GaugeChartAttr()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -969,8 +969,8 @@ class ScatterChartView : ComposeView<ScatterChartAttr, ScatterChartEvent>() {
     private var lastYMin = 0f
     private var lastYRange = 1f
 
-    override fun createAttr() = ScatterChartAttr()
-    override fun createEvent() = ScatterChartEvent()
+    override fun createAttr(): ScatterChartAttr = ScatterChartAttr()
+    override fun createEvent(): ScatterChartEvent = ScatterChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -1133,8 +1133,8 @@ class FunnelChartView : ComposeView<FunnelChartAttr, FunnelChartEvent>() {
     private var lastSliceRects = emptyList<FloatArray>()
     private var lastSortedSlices = emptyList<FunnelSlice>()
 
-    override fun createAttr() = FunnelChartAttr()
-    override fun createEvent() = FunnelChartEvent()
+    override fun createAttr(): FunnelChartAttr = FunnelChartAttr()
+    override fun createEvent(): FunnelChartEvent = FunnelChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
@@ -1269,7 +1269,7 @@ class WaterfallChartAttr : ComposeAttr() {
 }
 
 class WaterfallChartView : ComposeView<WaterfallChartAttr, ComposeEvent>() {
-    override fun createAttr() = WaterfallChartAttr()
+    override fun createAttr(): WaterfallChartAttr = WaterfallChartAttr()
     override fun body(): ViewBuilder {
         val ctx = this
         return {
@@ -1442,8 +1442,8 @@ class CandlestickChartView : ComposeView<CandlestickChartAttr, CandlestickChartE
     private var lastMinVal = 0f
     private var lastRange = 1f
 
-    override fun createAttr() = CandlestickChartAttr()
-    override fun createEvent() = CandlestickChartEvent()
+    override fun createAttr(): CandlestickChartAttr = CandlestickChartAttr()
+    override fun createEvent(): CandlestickChartEvent = CandlestickChartEvent()
 
     override fun body(): ViewBuilder {
         val ctx = this
