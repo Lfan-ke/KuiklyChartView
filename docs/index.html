@@ -908,7 +908,7 @@ body {
 <header class="topbar">
   <button class="hamburger" id="hamburger" aria-label="Toggle menu">&#9776;</button>
   <div class="brand">
-    <div class="logo">&#128202;</div>
+    <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="display:block"><rect x="3" y="11" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="2" width="4" height="18" rx="1"/></svg></div>
     <div>
       <h1>KuiklyChartView</h1>
       <div class="subtitle">Kotlin / Kuikly cross-platform charts</div>
@@ -962,10 +962,10 @@ body {
       <div class="stat"><div class="num">60fps</div><div class="label">渲染帧率</div></div>
     </div>
     <div class="platform-badges">
-      <span class="platform-badge">&#129302; Android</span>
-      <span class="platform-badge">&#127822; iOS</span>
-      <span class="platform-badge">&#127760; HarmonyOS</span>
-      <span class="platform-badge">&#9889; Kotlin Multiplatform</span>
+      <span class="platform-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:4px"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M9 11V8a3 3 0 0 1 6 0v3"/><circle cx="9" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="16" r="1" fill="currentColor" stroke="none"/></svg>Android</span>
+      <span class="platform-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:4px"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.39-1.32 2.76-2.54 3.99zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>iOS</span>
+      <span class="platform-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18M3 12h18" stroke-linecap="round"/></svg>HarmonyOS</span>
+      <span class="platform-badge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M3 3l9 18 9-18M6 9h12"/></svg>Kotlin</span>
     </div>
   </section>
 
@@ -1162,78 +1162,106 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 /* ============================================================
+   CHART SVG ICONS
+   ============================================================ */
+const CHART_SVG_ICONS = {
+  LineChart:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/></svg>',
+  BarChart:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="11" width="4" height="10" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="2" width="4" height="19" rx="1"/></svg>',
+  AreaChart:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 8 11 13 14 21 7"/></svg>',
+  PieChart:     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 12 L12 2 A10 10 0 0 1 22 12 Z"/><circle cx="12" cy="12" r="10"/></svg>',
+  DonutChart:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="2.5"/><circle cx="12" cy="12" r="4" stroke-width="2.5"/></svg>',
+  ScatterChart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="17" r="2"/><circle cx="10" cy="11" r="2"/><circle cx="16" cy="14" r="2"/><circle cx="19" cy="7" r="2"/></svg>',
+  BubbleChart:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="16" r="4"/><circle cx="17" cy="10" r="6"/></svg>',
+  BoxplotChart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="8" width="10" height="10"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="9" y1="3" x2="15" y2="3"/><line x1="9" y1="21" x2="15" y2="21"/><line x1="7" y1="13" x2="17" y2="13"/></svg>',
+  RadarChart:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 20 8.5 17 18 7 18 4 8.5"/><polygon points="12 7 17 11 15 16 9 16 7 11"/></svg>',
+  FunnelChart:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4 L21 4 L14 13 L14 21 L10 21 L10 13 Z"/></svg>',
+  GaugeChart:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19 A8 8 0 0 1 19 19"/><line x1="12" y1="19" x2="7.5" y2="13"/><circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>',
+  WaterfallChart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 18 7 18 7 12 11 12 11 7 15 7 15 3 19 3"/></svg>',
+  CandlestickChart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="4" x2="6" y2="20"/><rect x="3" y="8" width="6" height="8"/><line x1="17" y1="2" x2="17" y2="22"/><rect x="14" y="7" width="6" height="10"/></svg>',
+  HeatmapChart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="9.25" y="2" width="5.5" height="5.5" rx="1" opacity=".6"/><rect x="16.5" y="2" width="5.5" height="5.5" rx="1" opacity=".3"/><rect x="2" y="9.25" width="5.5" height="5.5" rx="1" opacity=".5"/><rect x="9.25" y="9.25" width="5.5" height="5.5" rx="1"/><rect x="16.5" y="9.25" width="5.5" height="5.5" rx="1" opacity=".4"/><rect x="2" y="16.5" width="5.5" height="5.5" rx="1" opacity=".2"/><rect x="9.25" y="16.5" width="5.5" height="5.5" rx="1" opacity=".7"/><rect x="16.5" y="16.5" width="5.5" height="5.5" rx="1" opacity=".95"/></svg>',
+  TreemapChart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="14" y1="2" x2="14" y2="22"/><line x1="14" y1="13" x2="22" y2="13"/><line x1="2" y1="15" x2="14" y2="15"/></svg>',
+  SankeyChart:  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M2 6 C8 6 8 11 14 11 S22 14 22 14"/><path d="M2 18 C8 18 8 13 14 13 S22 11 22 11"/></svg>',
+  NightingaleRoseChart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 10V2M12 14v8M10 12H2M14 12h8M10.6 10.6 5 5M13.4 13.4l5.6 5.6M13.4 10.6 19 5M10.6 13.4 5 19"/></svg>',
+  CalendarHeatmap:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="6.5" y="13" width="3" height="3" fill="currentColor" stroke="none"/><rect x="12.5" y="13" width="3" height="3" fill="currentColor" stroke="none" opacity=".5"/></svg>',
+  MixedChart:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" fill="currentColor" stroke="none" opacity=".9"/><rect x="10" y="8" width="4" height="13" fill="currentColor" stroke="none"/><rect x="17" y="11" width="4" height="10" fill="currentColor" stroke="none" opacity=".9"/><polyline points="3 10 10 6 17 9 21 4" stroke-width="2.5"/></svg>',
+  SparklineChart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 14 6 10 10 15 14 8 18 12 22 8"/></svg>',
+  ProgressRingChart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="12" cy="12" r="9" stroke-width="2" stroke-dasharray="46 10" stroke-dashoffset="-4"/><circle cx="12" cy="12" r="5" stroke-width="2.5" stroke-dasharray="22 10" stroke-dashoffset="-3"/></svg>',
+  StackedBarChart:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="14" width="5" height="7" rx="1"/><rect x="3" y="9" width="5" height="4" rx="1" opacity=".7"/><rect x="3" y="6" width="5" height="2" rx="1" opacity=".4"/><rect x="10" y="10" width="5" height="11" rx="1"/><rect x="10" y="5" width="5" height="4" rx="1" opacity=".7"/><rect x="17" y="12" width="5" height="9" rx="1"/><rect x="17" y="6" width="5" height="5" rx="1" opacity=".7"/><rect x="17" y="3" width="5" height="2" rx="1" opacity=".4"/></svg>'
+};
+
+/* ============================================================
    CHART REGISTRY - metadata for all 22 charts
    ============================================================ */
 const CHART_REGISTRY = [
   // --- 基础图表 ---
   { id: 'LineChart', name: 'LineChart', cn: '折线图', cat: '基础图表',
-    icon: '&#128200;', color: '#3b82f6',
+    icon: CHART_SVG_ICONS.LineChart, color: '#3b82f6',
     desc: 'Multi-series line chart with bezier smoothing' },
   { id: 'BarChart', name: 'BarChart', cn: '柱状图', cat: '基础图表',
-    icon: '&#128202;', color: '#8b5cf6',
+    icon: CHART_SVG_ICONS.BarChart, color: '#8b5cf6',
     desc: 'Grouped vertical bars with multiple series' },
   { id: 'AreaChart', name: 'AreaChart', cn: '面积图', cat: '基础图表',
-    icon: '&#127956;', color: '#06b6d4',
+    icon: CHART_SVG_ICONS.AreaChart, color: '#06b6d4',
     desc: 'Filled area chart with gradient fill' },
   { id: 'PieChart', name: 'PieChart', cn: '饼图', cat: '基础图表',
-    icon: '&#127859;', color: '#f59e0b',
+    icon: CHART_SVG_ICONS.PieChart, color: '#f59e0b',
     desc: 'Pie segments with leader-line labels' },
   { id: 'DonutChart', name: 'DonutChart', cn: '环形图', cat: '基础图表',
-    icon: '&#11093;', color: '#ec4899',
+    icon: CHART_SVG_ICONS.DonutChart, color: '#ec4899',
     desc: 'Ring chart with center total text' },
   // --- 统计图表 ---
   { id: 'ScatterChart', name: 'ScatterChart', cn: '散点图', cat: '统计图表',
-    icon: '&#10057;', color: '#10b981',
+    icon: CHART_SVG_ICONS.ScatterChart, color: '#10b981',
     desc: 'Scatter plot with optional trend line' },
   { id: 'BubbleChart', name: 'BubbleChart', cn: '气泡图', cat: '统计图表',
-    icon: '&#128162;', color: '#14b8a6',
+    icon: CHART_SVG_ICONS.BubbleChart, color: '#14b8a6',
     desc: 'Scatter with a third dimension as bubble size' },
   { id: 'BoxplotChart', name: 'BoxplotChart', cn: '箱线图', cat: '统计图表',
-    icon: '&#128208;', color: '#6366f1',
+    icon: CHART_SVG_ICONS.BoxplotChart, color: '#6366f1',
     desc: 'Box-and-whisker with median, IQR and outliers' },
   { id: 'RadarChart', name: 'RadarChart', cn: '雷达图', cat: '统计图表',
-    icon: '&#128301;', color: '#f43f5e',
+    icon: CHART_SVG_ICONS.RadarChart, color: '#f43f5e',
     desc: 'Spider chart with polygon grid levels' },
   // --- 商业图表 ---
   { id: 'FunnelChart', name: 'FunnelChart', cn: '漏斗图', cat: '商业图表',
-    icon: '&#9203;', color: '#0ea5e9',
+    icon: CHART_SVG_ICONS.FunnelChart, color: '#0ea5e9',
     desc: 'Conversion funnel with decreasing trapezoids' },
   { id: 'GaugeChart', name: 'GaugeChart', cn: '仪表盘', cat: '商业图表',
-    icon: '&#9201;', color: '#ef4444',
+    icon: CHART_SVG_ICONS.GaugeChart, color: '#ef4444',
     desc: 'Speedometer with colored zones and needle' },
   { id: 'WaterfallChart', name: 'WaterfallChart', cn: '瀑布图', cat: '商业图表',
-    icon: '&#127754;', color: '#22c55e',
+    icon: CHART_SVG_ICONS.WaterfallChart, color: '#22c55e',
     desc: 'Waterfall bridge with positive/negative bars' },
   { id: 'CandlestickChart', name: 'CandlestickChart', cn: 'K线图', cat: '商业图表',
-    icon: '&#128201;', color: '#eab308',
+    icon: CHART_SVG_ICONS.CandlestickChart, color: '#eab308',
     desc: 'OHLC candlestick with up/down coloring' },
   // --- 高级图表 ---
   { id: 'HeatmapChart', name: 'HeatmapChart', cn: '热力图', cat: '高级图表',
-    icon: '&#128293;', color: '#f97316',
+    icon: CHART_SVG_ICONS.HeatmapChart, color: '#f97316',
     desc: '2D grid with color intensity mapping' },
   { id: 'TreemapChart', name: 'TreemapChart', cn: '矩形树图', cat: '高级图表',
-    icon: '&#129513;', color: '#84cc16',
+    icon: CHART_SVG_ICONS.TreemapChart, color: '#84cc16',
     desc: 'Nested rectangles sized by value' },
   { id: 'SankeyChart', name: 'SankeyChart', cn: '桑基图', cat: '高级图表',
-    icon: '&#128167;', color: '#0891b2',
+    icon: CHART_SVG_ICONS.SankeyChart, color: '#0891b2',
     desc: 'Flow diagram with curved bezier links' },
   { id: 'NightingaleRoseChart', name: 'NightingaleRoseChart', cn: '南丁格尔玫瑰图', cat: '高级图表',
-    icon: '&#127801;', color: '#d946ef',
+    icon: CHART_SVG_ICONS.NightingaleRoseChart, color: '#d946ef',
     desc: 'Polar rose chart with equal-angle sectors' },
   { id: 'CalendarHeatmap', name: 'CalendarHeatmap', cn: '日历热力图', cat: '高级图表',
-    icon: '&#128197;', color: '#22c55e',
+    icon: CHART_SVG_ICONS.CalendarHeatmap, color: '#22c55e',
     desc: 'GitHub-style 52-week contribution grid' },
   { id: 'MixedChart', name: 'MixedChart', cn: '组合图', cat: '高级图表',
-    icon: '&#128207;', color: '#6366f1',
+    icon: CHART_SVG_ICONS.MixedChart, color: '#6366f1',
     desc: 'Bar + line combo on shared axes' },
   { id: 'SparklineChart', name: 'SparklineChart', cn: '迷你图', cat: '高级图表',
-    icon: '&#12310;&#12311;', color: '#0ea5e9',
+    icon: CHART_SVG_ICONS.SparklineChart, color: '#0ea5e9',
     desc: 'Minimal inline sparklines, multiple rows' },
   { id: 'ProgressRingChart', name: 'ProgressRingChart', cn: '进度环', cat: '高级图表',
-    icon: '&#9210;', color: '#ec4899',
+    icon: CHART_SVG_ICONS.ProgressRingChart, color: '#ec4899',
     desc: 'Apple-Watch concentric progress rings' },
   { id: 'StackedBarChart', name: 'StackedBarChart', cn: '堆叠柱状图', cat: '高级图表',
-    icon: '&#127850;', color: '#8b5cf6',
+    icon: CHART_SVG_ICONS.StackedBarChart, color: '#8b5cf6',
     desc: 'Stacked bar chart with segmented columns' }
 ];
 
