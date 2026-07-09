@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,12 +12,12 @@
    KuiklyChartView Showcase - Design System
    ============================================================ */
 :root {
-  --sidebar-bg: #0d1117;
-  --sidebar-active: rgba(102,126,234,.18);
-  --sidebar-active-text: #f0f0ff;
-  --sidebar-text: #8b949e;
-  --sidebar-text-dim: #64748b;
-  --sidebar-hover: rgba(255,255,255,.06);
+  --sidebar-bg: #f8fafc;
+  --sidebar-active: rgba(102,126,234,.12);
+  --sidebar-active-text: #5b21b6;
+  --sidebar-text: #475569;
+  --sidebar-text-dim: #94a3b8;
+  --sidebar-hover: rgba(0,0,0,.04);
   --accent: #667eea;
   --accent-hover: #5a67d8;
   --accent-rgb: 102,126,234;
@@ -40,7 +40,7 @@
 }
 
 [data-theme="dark"] {
-  --main-bg: #1e293b;
+  --main-bg: #0f172a;
   --card-bg: #1e293b;
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
@@ -49,6 +49,12 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+  --sidebar-bg: #0d1117;
+  --sidebar-active: rgba(102,126,234,.18);
+  --sidebar-active-text: #f0f0ff;
+  --sidebar-text: #8b949e;
+  --sidebar-text-dim: #64748b;
+  --sidebar-hover: rgba(255,255,255,.06);
 }
 
 * {
@@ -185,15 +191,16 @@ body {
   background: var(--sidebar-bg);
   overflow-y: auto;
   z-index: 900;
-  border-right: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid var(--border);
   transition: transform 0.28s ease;
 }
 
 .sidebar::-webkit-scrollbar { width: 4px; }
 .sidebar::-webkit-scrollbar-thumb {
-  background: #21262d;
+  background: #cbd5e1;
   border-radius: 2px;
 }
+[data-theme="dark"] .sidebar::-webkit-scrollbar-thumb { background: #21262d; }
 .sidebar::-webkit-scrollbar-track { background: transparent; }
 
 .sidebar .search-wrap {
@@ -202,19 +209,22 @@ body {
   top: 0;
   background: var(--sidebar-bg);
   z-index: 5;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--border);
 }
 
 .sidebar .search-input {
   width: 100%;
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: rgba(0,0,0,.04);
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px 10px 36px;
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-size: 14px;
   outline: none;
   transition: border var(--transition), box-shadow var(--transition);
+}
+[data-theme="dark"] .sidebar .search-input {
+  background: rgba(255,255,255,.06);
 }
 
 .sidebar .search-input:focus {
@@ -222,7 +232,7 @@ body {
   box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.2);
 }
 
-.sidebar .search-input::placeholder { color: #64748b; }
+.sidebar .search-input::placeholder { color: var(--sidebar-text-dim); }
 
 .sidebar .search-wrap {
   position: sticky;
@@ -232,7 +242,7 @@ body {
   position: absolute;
   left: 28px;
   top: 27px;
-  color: #64748b;
+  color: var(--sidebar-text-dim);
   pointer-events: none;
 }
 
@@ -241,7 +251,7 @@ body {
 }
 
 .sidebar .nav-group-title {
-  color: #484f58;
+  color: var(--sidebar-text-dim);
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -253,8 +263,8 @@ body {
 }
 
 .sidebar .nav-group-title .count {
-  background: #1e293b;
-  color: #64748b;
+  background: var(--border);
+  color: var(--sidebar-text-dim);
   font-size: 10px;
   padding: 1px 7px;
   border-radius: 10px;
@@ -278,12 +288,12 @@ body {
 
 .sidebar .nav-item:hover {
   background: var(--sidebar-hover);
-  color: #fff;
+  color: var(--sidebar-active-text);
 }
 
 .sidebar .nav-item.active {
-  background: rgba(102,126,234,.18);
-  color: #f0f0ff;
+  background: var(--sidebar-active);
+  color: var(--sidebar-active-text);
   border-left-color: var(--accent);
   font-weight: 500;
 }
@@ -300,7 +310,7 @@ body {
 .sidebar .nav-group.hidden { display: none; }
 
 .sidebar .no-results {
-  color: #64748b;
+  color: var(--sidebar-text-dim);
   font-size: 13px;
   text-align: center;
   padding: 24px 20px;
@@ -309,9 +319,9 @@ body {
 
 .sidebar .sidebar-footer {
   padding: 16px 20px;
-  color: #475569;
+  color: var(--sidebar-text);
   font-size: 11px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid var(--border);
   margin-top: 8px;
 }
 
@@ -899,6 +909,7 @@ body {
 .scroll-top.show { opacity: 1; pointer-events: auto; }
 .scroll-top:hover { transform: translateY(-3px); background: var(--accent-hover); }
 </style>
+<script>(function(){var s;try{s=localStorage.getItem('kcv-theme')}catch(e){}if(!s)s=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s)})()</script>
 </head>
 <body>
 
@@ -3814,13 +3825,19 @@ function wireTheme() {
     renderAll();
   }
 
-  let saved = 'light';
-  try { saved = localStorage.getItem('kcv-theme') || 'light'; } catch (e) {}
+  let saved;
+  try { saved = localStorage.getItem('kcv-theme'); } catch (e) {}
+  if (!saved) saved = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
   apply(saved);
 
   toggle.addEventListener('click', () => {
     const current = root.getAttribute('data-theme');
     apply(current === 'dark' ? 'light' : 'dark');
+  });
+
+  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', function(e) {
+    try { if (localStorage.getItem('kcv-theme')) return; } catch (ex) {}
+    apply(e.matches ? 'dark' : 'light');
   });
 }
 
