@@ -1,0 +1,3857 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KuiklyChartView - Kotlin/Kuikly 跨平台图表组件库</title>
+<meta name="description" content="KuiklyChartView is a cross-platform chart library for Kotlin/Kuikly, supporting 22 chart types across Android, iOS and HarmonyOS.">
+<style>
+/* ============================================================
+   KuiklyChartView Showcase - Design System
+   ============================================================ */
+:root {
+  --sidebar-bg: #0f172a;
+  --sidebar-active: #1e3a5f;
+  --sidebar-text: #cbd5e1;
+  --sidebar-text-dim: #64748b;
+  --sidebar-hover: #1e293b;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --main-bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --code-bg: #1e1e2e;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --sidebar-w: 260px;
+  --topbar-h: 64px;
+  --transition: 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --main-bg: #1e293b;
+  --card-bg: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --border: #334155;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--main-bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ============================================================
+   Top Bar
+   ============================================================ */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--topbar-h);
+  background: var(--header-gradient);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 1000;
+  box-shadow: var(--shadow-md);
+}
+
+.topbar .hamburger {
+  display: none;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-right: 16px;
+  font-size: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar .brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar .brand .logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  backdrop-filter: blur(8px);
+}
+
+.topbar .brand h1 {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.topbar .brand .subtitle {
+  color: rgba(255,255,255,0.75);
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: -2px;
+}
+
+.topbar .spacer { flex: 1; }
+
+.topbar .actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar .icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.15);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), transform var(--transition);
+  text-decoration: none;
+}
+
+.topbar .icon-btn:hover {
+  background: rgba(255,255,255,0.28);
+  transform: translateY(-1px);
+}
+
+.topbar .icon-btn svg { width: 20px; height: 20px; }
+
+.topbar .version-badge {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+.sidebar {
+  position: fixed;
+  top: var(--topbar-h);
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  overflow-y: auto;
+  z-index: 900;
+  border-right: 1px solid rgba(255,255,255,0.05);
+  transition: transform 0.28s ease;
+}
+
+.sidebar::-webkit-scrollbar { width: 6px; }
+.sidebar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+
+.sidebar .search-wrap {
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  background: var(--sidebar-bg);
+  z-index: 5;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.sidebar .search-input {
+  width: 100%;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px 10px 36px;
+  color: #e2e8f0;
+  font-size: 14px;
+  outline: none;
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+.sidebar .search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+
+.sidebar .search-input::placeholder { color: #64748b; }
+
+.sidebar .search-wrap {
+  position: sticky;
+}
+
+.sidebar .search-icon {
+  position: absolute;
+  left: 28px;
+  top: 27px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.sidebar .nav-group {
+  padding: 8px 0;
+}
+
+.sidebar .nav-group-title {
+  color: var(--sidebar-text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 12px 20px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sidebar .nav-group-title .count {
+  background: #1e293b;
+  color: #64748b;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  margin-left: auto;
+}
+
+.sidebar .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 20px;
+  color: var(--sidebar-text);
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.sidebar .nav-item:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+
+.sidebar .nav-item.active {
+  background: var(--sidebar-active);
+  color: #fff;
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar .nav-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.sidebar .nav-item.hidden { display: none; }
+.sidebar .nav-group.hidden { display: none; }
+
+.sidebar .no-results {
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 20px;
+  display: none;
+}
+
+.sidebar .sidebar-footer {
+  padding: 16px 20px;
+  color: #475569;
+  font-size: 11px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: 8px;
+}
+
+/* ============================================================
+   Main Content
+   ============================================================ */
+.main {
+  margin-left: var(--sidebar-w);
+  margin-top: var(--topbar-h);
+  padding: 32px;
+  min-height: calc(100vh - var(--topbar-h));
+}
+
+.hero {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 36px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -10%;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(102,126,234,0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.hero h2 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  margin-bottom: 8px;
+  background: var(--header-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  max-width: 640px;
+}
+
+.hero .stats {
+  display: flex;
+  gap: 32px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.hero .stat .num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero .stat .label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.hero .platform-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.hero .platform-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--main-bg);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+/* ============================================================
+   Chart Card
+   ============================================================ */
+.chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 40px;
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: calc(var(--topbar-h) + 20px);
+  overflow: hidden;
+  transition: box-shadow var(--transition);
+}
+
+.chart-card:hover { box-shadow: var(--shadow-md); }
+
+.chart-card .card-header {
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chart-card .card-header .badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.chart-card .card-header .title-wrap { flex: 1; }
+
+.chart-card .card-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.chart-card .card-header .desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.chart-card .card-header .category-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(59,130,246,0.1);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.chart-card .card-body {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
+  padding: 28px;
+}
+
+/* ============================================================
+   Phone Frame (CSS only)
+   ============================================================ */
+.phone-col {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.phone-frame {
+  width: 300px;
+  height: 560px;
+  background: #1a1a1f;
+  border-radius: 42px;
+  padding: 12px;
+  box-shadow:
+    0 0 0 2px #2a2a30,
+    0 20px 40px -12px rgba(0,0,0,0.4),
+    inset 0 0 0 2px rgba(255,255,255,0.04);
+  position: relative;
+}
+
+.phone-frame .notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 26px;
+  background: #1a1a1f;
+  border-radius: 0 0 18px 18px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.phone-frame .notch::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2d2d35;
+  box-shadow: inset 0 0 2px rgba(100,150,255,0.3);
+}
+
+.phone-frame .notch::after {
+  content: "";
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: #2d2d35;
+}
+
+.phone-frame .screen {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme="dark"] .phone-frame .screen {
+  background: #0f172a;
+}
+
+.phone-frame .status-bar {
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 22px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.phone-frame .status-bar .time { font-variant-numeric: tabular-nums; }
+
+.phone-frame .status-bar .indicators {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.phone-frame .status-bar .indicators svg { width: 16px; height: 16px; }
+
+.phone-frame .app-header {
+  padding: 6px 18px 10px;
+  flex-shrink: 0;
+}
+
+.phone-frame .app-header .app-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.phone-frame .app-header .app-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.phone-frame .canvas-area {
+  flex: 1;
+  position: relative;
+  padding: 4px 8px 8px;
+  min-height: 0;
+}
+
+.phone-frame canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.phone-frame .home-indicator {
+  height: 5px;
+  width: 120px;
+  background: var(--text-muted);
+  opacity: 0.4;
+  border-radius: 3px;
+  margin: 4px auto 8px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Controls Panel
+   ============================================================ */
+.controls-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.control-section {
+  margin-bottom: 22px;
+}
+
+.control-section .control-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border var(--transition), background var(--transition);
+  background: var(--card-bg);
+}
+
+.theme-option:hover { border-color: var(--accent); }
+
+.theme-option.active {
+  border-color: var(--accent);
+  background: rgba(59,130,246,0.06);
+}
+
+.theme-option input { display: none; }
+
+.theme-option .swatches {
+  display: flex;
+  gap: 2px;
+}
+
+.theme-option .swatch {
+  width: 10px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.theme-option .theme-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.btn-randomize {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+}
+
+.btn-randomize:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+}
+
+.btn-randomize:active { transform: translateY(0); }
+
+.btn-randomize svg { width: 16px; height: 16px; }
+
+.toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.toggle-row:hover { background: var(--main-bg); }
+
+.toggle-row .toggle-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 22px;
+  transition: background var(--transition);
+}
+
+.switch .slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.switch input:checked + .slider { background: var(--accent); }
+.switch input:checked + .slider::before { transform: translateX(18px); }
+
+/* ============================================================
+   Code Snippet
+   ============================================================ */
+.code-section {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+.code-block {
+  background: var(--code-bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid #2a2a3e;
+}
+
+.code-block .code-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  background: #181825;
+  border-bottom: 1px solid #2a2a3e;
+}
+
+.code-block .code-header .dots {
+  display: flex;
+  gap: 7px;
+  margin-right: 14px;
+}
+
+.code-block .code-header .dots span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.code-block .code-header .dots .r { background: #ff5f56; }
+.code-block .code-header .dots .y { background: #ffbd2e; }
+.code-block .code-header .dots .g { background: #27c93f; }
+
+.code-block .code-header .filename {
+  color: #6c7086;
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", Consolas, Menlo, monospace;
+}
+
+.code-block .code-header .copy-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid #2a2a3e;
+  color: #a6adc8;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background var(--transition), color var(--transition);
+}
+
+.code-block .code-header .copy-btn:hover {
+  background: #2a2a3e;
+  color: #fff;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #cdd6f4;
+}
+
+.code-block pre::-webkit-scrollbar { height: 8px; }
+.code-block pre::-webkit-scrollbar-thumb { background: #45475a; border-radius: 4px; }
+
+.tok-kw { color: #c792ea; }
+.tok-str { color: #c3e88d; }
+.tok-num { color: #f78c6c; }
+.tok-fn { color: #82aaff; }
+.tok-com { color: #676e95; font-style: italic; }
+.tok-prop { color: #f07178; }
+.tok-punc { color: #89ddff; }
+
+/* ============================================================
+   Mobile / Responsive
+   ============================================================ */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 850;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.show { display: block; }
+
+@media (max-width: 1024px) {
+  .chart-card .card-body {
+    grid-template-columns: 1fr;
+  }
+  .phone-col { margin-bottom: 8px; }
+}
+
+@media (max-width: 768px) {
+  :root { --sidebar-w: 280px; }
+  .topbar .hamburger { display: flex; }
+  .topbar .brand .subtitle { display: none; }
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main {
+    margin-left: 0;
+    padding: 18px;
+  }
+  .hero { padding: 24px; }
+  .hero h2 { font-size: 24px; }
+  .chart-card .card-body { padding: 18px; }
+  .hero .stats { gap: 20px; }
+}
+
+@media (max-width: 480px) {
+  .phone-frame {
+    width: 260px;
+    height: 500px;
+  }
+  .theme-picker { grid-template-columns: 1fr; }
+  .topbar .brand h1 { font-size: 18px; }
+}
+
+/* Scroll-to-top button */
+.scroll-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+  z-index: 800;
+}
+
+.scroll-top.show { opacity: 1; pointer-events: auto; }
+.scroll-top:hover { transform: translateY(-3px); background: var(--accent-hover); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP BAR
+     ============================================================ -->
+<header class="topbar">
+  <button class="hamburger" id="hamburger" aria-label="Toggle menu">&#9776;</button>
+  <div class="brand">
+    <div class="logo">&#128202;</div>
+    <div>
+      <h1>KuiklyChartView</h1>
+      <div class="subtitle">Kotlin / Kuikly cross-platform charts</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="actions">
+    <span class="version-badge">v1.2.0</span>
+    <a class="icon-btn" href="https://github.com/Tencent/KuiklyUI" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.72-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 012.9-.39c.98 0 1.97.13 2.9.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14 0 1.55-.01 2.8-.01 3.18 0 .31.21.68.8.56C20.71 21.39 24 17.08 24 12 24 5.73 18.77.5 12 .5z"/></svg>
+    </a>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle theme">
+      <svg id="themeIconMoon" viewBox="0 0 24 24" fill="currentColor"><path d="M21.75 15.5a9 9 0 01-11.25-11.2A9 9 0 1021.75 15.5z"/></svg>
+      <svg id="themeIconSun" viewBox="0 0 24 24" fill="currentColor" style="display:none"><path d="M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<aside class="sidebar" id="sidebar">
+  <div class="search-wrap">
+    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3" stroke-linecap="round"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="搜索图表组件..." autocomplete="off">
+  </div>
+  <nav id="navList"></nav>
+  <div class="no-results" id="noResults">未找到匹配的组件</div>
+  <div class="sidebar-footer">
+    KuiklyChartView &copy; 2026<br>
+    Apache-2.0 License &middot; 22 charts
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main class="main" id="main">
+  <section class="hero">
+    <h2>KuiklyChartView 图表组件库</h2>
+    <p>
+      基于 Kotlin 与 Tencent Kuikly 框架构建的高性能跨平台图表库，一套 DSL 代码同时运行于
+      Android、iOS 与 HarmonyOS。内置 22 种图表类型，支持声明式 API、主题定制与流畅动画。
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="num">22</div><div class="label">图表类型</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">目标平台</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">内置主题</div></div>
+      <div class="stat"><div class="num">60fps</div><div class="label">渲染帧率</div></div>
+    </div>
+    <div class="platform-badges">
+      <span class="platform-badge">&#129302; Android</span>
+      <span class="platform-badge">&#127822; iOS</span>
+      <span class="platform-badge">&#127760; HarmonyOS</span>
+      <span class="platform-badge">&#9889; Kotlin Multiplatform</span>
+    </div>
+  </section>
+
+  <div id="chartContainer"></div>
+</main>
+
+<button class="scroll-top" id="scrollTop" aria-label="Back to top">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<script>
+"use strict";
+/* ============================================================
+   KuiklyChartView Showcase - Application Logic
+   ============================================================ */
+
+// ---------- Color Themes ----------
+const THEMES = {
+  Default:  ['#1677ff','#52c41a','#fa8c16','#f5222d','#722ed1','#13c2c2','#eb2f96'],
+  ECharts:  ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452'],
+  Material: ['#4285f4','#ea4335','#fbbc05','#34a853','#673ab7','#ff5722','#009688'],
+  Pastel:   ['#a8c7f0','#a8e6cf','#ffd3b6','#ffaaa5','#d4b8e0','#a0e4cb','#ffd4e0']
+};
+
+const THEME_ORDER = ['Default','ECharts','Material','Pastel'];
+
+// ---------- Chart State Store ----------
+const chartStates = {};
+
+// ---------- Utility: random helpers ----------
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function randFloat(min, max) { return Math.random() * (max - min) + min; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function seriesData(n, min, max) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(randInt(min, max));
+  return out;
+}
+function smoothSeries(n, min, max) {
+  // random-walk style so it looks realistic
+  const out = [];
+  let v = randInt(min, max);
+  for (let i = 0; i < n; i++) {
+    v += randInt(-(max - min) / 5, (max - min) / 5);
+    v = Math.max(min, Math.min(max, v));
+    out.push(Math.round(v));
+  }
+  return out;
+}
+
+// ---------- Canvas helpers ----------
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.floor(rect.width));
+  const h = Math.max(1, Math.floor(rect.height));
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return { ctx, w, h, dpr };
+}
+
+function isDark() {
+  return document.documentElement.getAttribute('data-theme') === 'dark';
+}
+function gridColor() { return isDark() ? 'rgba(148,163,184,0.15)' : 'rgba(100,116,139,0.15)'; }
+function axisTextColor() { return isDark() ? '#94a3b8' : '#64748b'; }
+function labelColor() { return isDark() ? '#e2e8f0' : '#334155'; }
+function bgColor() { return isDark() ? '#0f172a' : '#ffffff'; }
+
+function hexToRgba(hex, alpha) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+
+function lightenHex(hex, amt) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  let r = parseInt(h.substring(0, 2), 16);
+  let g = parseInt(h.substring(2, 4), 16);
+  let b = parseInt(h.substring(4, 6), 16);
+  r = Math.round(r + (255 - r) * amt);
+  g = Math.round(g + (255 - g) * amt);
+  b = Math.round(b + (255 - b) * amt);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+
+function niceMax(v) {
+  if (v <= 0) return 10;
+  const exp = Math.floor(Math.log10(v));
+  const base = Math.pow(10, exp);
+  const frac = v / base;
+  let nice;
+  if (frac <= 1) nice = 1;
+  else if (frac <= 2) nice = 2;
+  else if (frac <= 5) nice = 5;
+  else nice = 10;
+  return nice * base;
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  r = Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// Draw Y axis grid + labels, returns plot rect
+function drawGrid(ctx, w, h, pad, maxVal, opts) {
+  opts = opts || {};
+  const steps = opts.steps || 4;
+  const plot = {
+    x: pad.l,
+    y: pad.t,
+    w: w - pad.l - pad.r,
+    h: h - pad.t - pad.b
+  };
+  ctx.save();
+  ctx.strokeStyle = gridColor();
+  ctx.lineWidth = 1;
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const y = plot.y + plot.h * (1 - t);
+    ctx.beginPath();
+    ctx.moveTo(plot.x, y);
+    ctx.lineTo(plot.x + plot.w, y);
+    ctx.stroke();
+    const val = Math.round(maxVal * t);
+    ctx.fillText(val, plot.x - 6, y);
+  }
+  ctx.restore();
+  return plot;
+}
+
+function drawXLabels(ctx, plot, labels) {
+  ctx.save();
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const step = plot.w / labels.length;
+  labels.forEach((lb, i) => {
+    const x = plot.x + step * (i + 0.5);
+    ctx.fillText(lb, x, plot.y + plot.h + 6);
+  });
+  ctx.restore();
+}
+
+function drawLegend(ctx, w, y, items, colors) {
+  ctx.save();
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textBaseline = 'middle';
+  let totalW = 0;
+  const gaps = 14;
+  items.forEach((it) => { totalW += ctx.measureText(it).width + 18 + gaps; });
+  let x = (w - totalW + gaps) / 2;
+  if (x < 4) x = 4;
+  items.forEach((it, i) => {
+    ctx.fillStyle = colors[i % colors.length];
+    roundRectPath(ctx, x, y - 4, 10, 8, 2);
+    ctx.fill();
+    x += 14;
+    ctx.fillStyle = labelColor();
+    ctx.textAlign = 'left';
+    ctx.fillText(it, x, y);
+    x += ctx.measureText(it).width + gaps + 4;
+  });
+  ctx.restore();
+}
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WEEKDAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+/* ============================================================
+   CHART REGISTRY - metadata for all 22 charts
+   ============================================================ */
+const CHART_REGISTRY = [
+  // --- 基础图表 ---
+  { id: 'LineChart', name: 'LineChart', cn: '折线图', cat: '基础图表',
+    icon: '&#128200;', color: '#3b82f6',
+    desc: 'Multi-series line chart with bezier smoothing' },
+  { id: 'BarChart', name: 'BarChart', cn: '柱状图', cat: '基础图表',
+    icon: '&#128202;', color: '#8b5cf6',
+    desc: 'Grouped vertical bars with multiple series' },
+  { id: 'AreaChart', name: 'AreaChart', cn: '面积图', cat: '基础图表',
+    icon: '&#127956;', color: '#06b6d4',
+    desc: 'Filled area chart with gradient fill' },
+  { id: 'PieChart', name: 'PieChart', cn: '饼图', cat: '基础图表',
+    icon: '&#127859;', color: '#f59e0b',
+    desc: 'Pie segments with leader-line labels' },
+  { id: 'DonutChart', name: 'DonutChart', cn: '环形图', cat: '基础图表',
+    icon: '&#11093;', color: '#ec4899',
+    desc: 'Ring chart with center total text' },
+  // --- 统计图表 ---
+  { id: 'ScatterChart', name: 'ScatterChart', cn: '散点图', cat: '统计图表',
+    icon: '&#10057;', color: '#10b981',
+    desc: 'Scatter plot with optional trend line' },
+  { id: 'BubbleChart', name: 'BubbleChart', cn: '气泡图', cat: '统计图表',
+    icon: '&#128162;', color: '#14b8a6',
+    desc: 'Scatter with a third dimension as bubble size' },
+  { id: 'BoxplotChart', name: 'BoxplotChart', cn: '箱线图', cat: '统计图表',
+    icon: '&#128208;', color: '#6366f1',
+    desc: 'Box-and-whisker with median, IQR and outliers' },
+  { id: 'RadarChart', name: 'RadarChart', cn: '雷达图', cat: '统计图表',
+    icon: '&#128301;', color: '#f43f5e',
+    desc: 'Spider chart with polygon grid levels' },
+  // --- 商业图表 ---
+  { id: 'FunnelChart', name: 'FunnelChart', cn: '漏斗图', cat: '商业图表',
+    icon: '&#9203;', color: '#0ea5e9',
+    desc: 'Conversion funnel with decreasing trapezoids' },
+  { id: 'GaugeChart', name: 'GaugeChart', cn: '仪表盘', cat: '商业图表',
+    icon: '&#9201;', color: '#ef4444',
+    desc: 'Speedometer with colored zones and needle' },
+  { id: 'WaterfallChart', name: 'WaterfallChart', cn: '瀑布图', cat: '商业图表',
+    icon: '&#127754;', color: '#22c55e',
+    desc: 'Waterfall bridge with positive/negative bars' },
+  { id: 'CandlestickChart', name: 'CandlestickChart', cn: 'K线图', cat: '商业图表',
+    icon: '&#128201;', color: '#eab308',
+    desc: 'OHLC candlestick with up/down coloring' },
+  // --- 高级图表 ---
+  { id: 'HeatmapChart', name: 'HeatmapChart', cn: '热力图', cat: '高级图表',
+    icon: '&#128293;', color: '#f97316',
+    desc: '2D grid with color intensity mapping' },
+  { id: 'TreemapChart', name: 'TreemapChart', cn: '矩形树图', cat: '高级图表',
+    icon: '&#129513;', color: '#84cc16',
+    desc: 'Nested rectangles sized by value' },
+  { id: 'SankeyChart', name: 'SankeyChart', cn: '桑基图', cat: '高级图表',
+    icon: '&#128167;', color: '#0891b2',
+    desc: 'Flow diagram with curved bezier links' },
+  { id: 'NightingaleRoseChart', name: 'NightingaleRoseChart', cn: '南丁格尔玫瑰图', cat: '高级图表',
+    icon: '&#127801;', color: '#d946ef',
+    desc: 'Polar rose chart with equal-angle sectors' },
+  { id: 'CalendarHeatmap', name: 'CalendarHeatmap', cn: '日历热力图', cat: '高级图表',
+    icon: '&#128197;', color: '#22c55e',
+    desc: 'GitHub-style 52-week contribution grid' },
+  { id: 'MixedChart', name: 'MixedChart', cn: '组合图', cat: '高级图表',
+    icon: '&#128207;', color: '#6366f1',
+    desc: 'Bar + line combo on shared axes' },
+  { id: 'SparklineChart', name: 'SparklineChart', cn: '迷你图', cat: '高级图表',
+    icon: '&#12310;&#12311;', color: '#0ea5e9',
+    desc: 'Minimal inline sparklines, multiple rows' },
+  { id: 'ProgressRingChart', name: 'ProgressRingChart', cn: '进度环', cat: '高级图表',
+    icon: '&#9210;', color: '#ec4899',
+    desc: 'Apple-Watch concentric progress rings' },
+  { id: 'StackedBarChart', name: 'StackedBarChart', cn: '堆叠柱状图', cat: '高级图表',
+    icon: '&#127850;', color: '#8b5cf6',
+    desc: 'Stacked bar chart with segmented columns' }
+];
+
+const CATEGORIES = ['基础图表', '统计图表', '商业图表', '高级图表'];
+
+/* ============================================================
+   RENDERER 1: LineChart
+   ============================================================ */
+function renderLineChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const labels = data.labels;
+  const series = data.series;
+  let maxVal = 0;
+  series.forEach(s => s.values.forEach(v => { if (v > maxVal) maxVal = v; }));
+  maxVal = niceMax(maxVal * 1.1);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxVal, { steps: 4 });
+  drawXLabels(ctx, plot, labels);
+
+  const stepX = plot.w / (labels.length - 1);
+  const toXY = (i, v) => ({
+    x: plot.x + stepX * i,
+    y: plot.y + plot.h * (1 - v / maxVal)
+  });
+
+  series.forEach((s, si) => {
+    const color = colors[si % colors.length];
+    const pts = s.values.map((v, i) => toXY(i, v));
+
+    // Area fill under smooth curve
+    if (opts.smooth && opts.area && !opts.step) {
+      const grad = ctx.createLinearGradient(0, plot.y, 0, plot.y + plot.h);
+      grad.addColorStop(0, hexToRgba(color, 0.28));
+      grad.addColorStop(1, hexToRgba(color, 0.02));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, plot.y + plot.h);
+      buildLinePath(ctx, pts, opts.smooth, opts.step, true);
+      ctx.lineTo(pts[pts.length - 1].x, plot.y + plot.h);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // Line stroke
+    ctx.beginPath();
+    buildLinePath(ctx, pts, opts.smooth, opts.step, false);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.4;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Dots
+    if (opts.dots) {
+      pts.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = bgColor();
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      });
+    }
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, series.map(s => s.name), colors);
+}
+
+function buildLinePath(ctx, pts, smooth, step, isContinuation) {
+  if (!isContinuation) ctx.moveTo(pts[0].x, pts[0].y);
+  else ctx.lineTo(pts[0].x, pts[0].y);
+  if (step) {
+    for (let i = 1; i < pts.length; i++) {
+      const midX = pts[i].x;
+      ctx.lineTo(midX, pts[i - 1].y);
+      ctx.lineTo(pts[i].x, pts[i].y);
+    }
+  } else if (smooth) {
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i === 0 ? 0 : i - 1];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2 < pts.length ? i + 2 : pts.length - 1];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+    }
+  } else {
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  }
+}
+
+/* ============================================================
+   RENDERER 2: BarChart
+   ============================================================ */
+function renderBarChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const labels = data.labels;
+  const series = data.series;
+  let maxVal = 0;
+  series.forEach(s => s.values.forEach(v => { if (v > maxVal) maxVal = v; }));
+  maxVal = niceMax(maxVal * 1.15);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxVal, { steps: 4 });
+  drawXLabels(ctx, plot, labels);
+
+  const groupW = plot.w / labels.length;
+  const groupPad = groupW * 0.2;
+  const innerW = groupW - groupPad * 2;
+  const barGap = 3;
+  const barW = (innerW - barGap * (series.length - 1)) / series.length;
+
+  labels.forEach((lb, gi) => {
+    const gx = plot.x + groupW * gi + groupPad;
+    series.forEach((s, si) => {
+      const v = s.values[gi];
+      const bh = plot.h * (v / maxVal);
+      const bx = gx + si * (barW + barGap);
+      const by = plot.y + plot.h - bh;
+      const color = colors[si % colors.length];
+      const grad = ctx.createLinearGradient(0, by, 0, by + bh);
+      grad.addColorStop(0, color);
+      grad.addColorStop(1, hexToRgba(color, 0.72));
+      ctx.fillStyle = grad;
+      roundRectPath(ctx, bx, by, barW, bh, Math.min(4, barW / 2));
+      ctx.fill();
+
+      if (opts.values) {
+        ctx.fillStyle = axisTextColor();
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(v, bx + barW / 2, by - 3);
+      }
+    });
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, series.map(s => s.name), colors);
+}
+
+/* ============================================================
+   RENDERER 3: AreaChart
+   ============================================================ */
+function renderAreaChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const labels = data.labels;
+  const series = data.series;
+  let maxVal = 0;
+  series.forEach(s => s.values.forEach(v => { if (v > maxVal) maxVal = v; }));
+  maxVal = niceMax(maxVal * 1.12);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxVal, { steps: 4 });
+  drawXLabels(ctx, plot, labels);
+
+  const stepX = plot.w / (labels.length - 1);
+  const toXY = (i, v) => ({
+    x: plot.x + stepX * i,
+    y: plot.y + plot.h * (1 - v / maxVal)
+  });
+
+  // draw from back to front for stacked look
+  series.slice().reverse().forEach((s, ri) => {
+    const si = series.length - 1 - ri;
+    const color = colors[si % colors.length];
+    const pts = s.values.map((v, i) => toXY(i, v));
+
+    const grad = ctx.createLinearGradient(0, plot.y, 0, plot.y + plot.h);
+    grad.addColorStop(0, hexToRgba(color, 0.55));
+    grad.addColorStop(1, hexToRgba(color, 0.05));
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, plot.y + plot.h);
+    buildLinePath(ctx, pts, opts.smooth, false, true);
+    ctx.lineTo(pts[pts.length - 1].x, plot.y + plot.h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    buildLinePath(ctx, pts, opts.smooth, false, false);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    if (opts.dots) {
+      pts.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+    }
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, series.map(s => s.name), colors);
+}
+
+/* ============================================================
+   RENDERER 4: PieChart
+   ============================================================ */
+function renderPieChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const items = data.items;
+  const total = items.reduce((a, b) => a + b.value, 0);
+  const cx = w / 2;
+  const cy = h / 2 - 4;
+  const radius = Math.min(w, h) / 2 - 46;
+
+  let start = -Math.PI / 2;
+  items.forEach((it, i) => {
+    const angle = (it.value / total) * Math.PI * 2;
+    const end = start + angle;
+    const mid = start + angle / 2;
+    const color = colors[i % colors.length];
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    // white gap
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = bgColor();
+    ctx.stroke();
+
+    if (opts.labels) {
+      // leader line
+      const lx1 = cx + Math.cos(mid) * radius;
+      const ly1 = cy + Math.sin(mid) * radius;
+      const lx2 = cx + Math.cos(mid) * (radius + 12);
+      const ly2 = cy + Math.sin(mid) * (radius + 12);
+      const side = Math.cos(mid) >= 0 ? 1 : -1;
+      const lx3 = lx2 + side * 14;
+      ctx.beginPath();
+      ctx.moveTo(lx1, ly1);
+      ctx.lineTo(lx2, ly2);
+      ctx.lineTo(lx3, ly2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(lx3, ly2, 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+
+      ctx.fillStyle = labelColor();
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.textAlign = side > 0 ? 'left' : 'right';
+      ctx.textBaseline = 'middle';
+      const pct = Math.round((it.value / total) * 100);
+      ctx.fillText(it.name + ' ' + pct + '%', lx3 + side * 4, ly2);
+    }
+    start = end;
+  });
+}
+
+/* ============================================================
+   RENDERER 5: DonutChart
+   ============================================================ */
+function renderDonutChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const items = data.items;
+  const total = items.reduce((a, b) => a + b.value, 0);
+  const cx = w / 2;
+  const cy = h / 2 - 2;
+  const outerR = Math.min(w, h) / 2 - 40;
+  const innerR = outerR * (opts.thick ? 0.55 : 0.68);
+
+  let start = -Math.PI / 2;
+  const gap = opts.gap ? 0.03 : 0;
+  items.forEach((it, i) => {
+    const angle = (it.value / total) * Math.PI * 2;
+    const end = start + angle;
+    const color = colors[i % colors.length];
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, start + gap, end - gap);
+    ctx.arc(cx, cy, innerR, end - gap, start + gap, true);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    start = end;
+  });
+
+  // center text
+  ctx.fillStyle = labelColor();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '700 26px -apple-system, sans-serif';
+  ctx.fillText(total.toLocaleString(), cx, cy - 6);
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.fillText(opts.centerLabel || 'Total', cx, cy + 16);
+
+  // legend at bottom
+  if (opts.legend) {
+    drawLegend(ctx, w, h - 12, items.map(it => it.name), colors);
+  }
+}
+
+/* ============================================================
+   RENDERER 6: ScatterChart
+   ============================================================ */
+function renderScatterChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const groups = data.groups;
+  let maxX = 0, maxY = 0;
+  groups.forEach(g => g.points.forEach(p => {
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }));
+  maxX = niceMax(maxX * 1.1);
+  maxY = niceMax(maxY * 1.1);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxY, { steps: 4 });
+
+  // X axis ticks
+  ctx.save();
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i <= 4; i++) {
+    const x = plot.x + plot.w * (i / 4);
+    ctx.fillText(Math.round(maxX * i / 4), x, plot.y + plot.h + 6);
+  }
+  ctx.restore();
+
+  const toXY = (px, py) => ({
+    x: plot.x + plot.w * (px / maxX),
+    y: plot.y + plot.h * (1 - py / maxY)
+  });
+
+  groups.forEach((g, gi) => {
+    const color = colors[gi % colors.length];
+    g.points.forEach(p => {
+      const c = toXY(p.x, p.y);
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = hexToRgba(color, 0.72);
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = color;
+      ctx.stroke();
+    });
+
+    // least-squares trend line
+    if (opts.trend) {
+      const pts = g.points;
+      const n = pts.length;
+      let sx = 0, sy = 0, sxy = 0, sxx = 0;
+      pts.forEach(p => { sx += p.x; sy += p.y; sxy += p.x * p.y; sxx += p.x * p.x; });
+      const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx || 1);
+      const intercept = (sy - slope * sx) / n;
+      const a = toXY(0, intercept);
+      const bx = maxX;
+      const b = toXY(bx, slope * bx + intercept);
+      ctx.beginPath();
+      ctx.moveTo(a.x, Math.max(plot.y, Math.min(plot.y + plot.h, a.y)));
+      ctx.lineTo(b.x, Math.max(plot.y, Math.min(plot.y + plot.h, b.y)));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([5, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, groups.map(g => g.name), colors);
+}
+
+/* ============================================================
+   RENDERER 7: BubbleChart
+   ============================================================ */
+function renderBubbleChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const groups = data.groups;
+  let maxX = 0, maxY = 0, maxZ = 0;
+  groups.forEach(g => g.points.forEach(p => {
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+    if (p.z > maxZ) maxZ = p.z;
+  }));
+  maxX = niceMax(maxX * 1.1);
+  maxY = niceMax(maxY * 1.1);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxY, { steps: 4 });
+
+  ctx.save();
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  for (let i = 0; i <= 4; i++) {
+    const x = plot.x + plot.w * (i / 4);
+    ctx.fillText(Math.round(maxX * i / 4), x, plot.y + plot.h + 6);
+  }
+  ctx.restore();
+
+  const maxR = 22, minR = 4;
+  const toXY = (px, py) => ({
+    x: plot.x + plot.w * (px / maxX),
+    y: plot.y + plot.h * (1 - py / maxY)
+  });
+
+  groups.forEach((g, gi) => {
+    const color = colors[gi % colors.length];
+    g.points.forEach(p => {
+      const c = toXY(p.x, p.y);
+      const r = minR + (maxR - minR) * (p.z / maxZ);
+      const grad = ctx.createRadialGradient(c.x - r * 0.3, c.y - r * 0.3, r * 0.1, c.x, c.y, r);
+      grad.addColorStop(0, hexToRgba(color, 0.75));
+      grad.addColorStop(1, hexToRgba(color, 0.35));
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = hexToRgba(color, 0.9);
+      ctx.stroke();
+      if (opts.zLabels && r > 10) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.z, c.x, c.y);
+      }
+    });
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, groups.map(g => g.name), colors);
+}
+
+/* ============================================================
+   RENDERER 8: BoxplotChart
+   ============================================================ */
+function renderBoxplotChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const boxes = data.boxes;
+  let maxVal = 0, minVal = Infinity;
+  boxes.forEach(b => {
+    maxVal = Math.max(maxVal, b.max, ...(b.outliers || []));
+    minVal = Math.min(minVal, b.min, ...(b.outliers || []));
+  });
+  const range = maxVal - minVal || 1;
+  maxVal += range * 0.08;
+  minVal -= range * 0.08;
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = { x: pad.l, y: pad.t, w: w - pad.l - pad.r, h: h - pad.t - pad.b };
+
+  // grid
+  ctx.save();
+  ctx.strokeStyle = gridColor();
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    const y = plot.y + plot.h * (1 - t);
+    ctx.beginPath();
+    ctx.moveTo(plot.x, y);
+    ctx.lineTo(plot.x + plot.w, y);
+    ctx.stroke();
+    ctx.fillText(Math.round(minVal + (maxVal - minVal) * t), plot.x - 6, y);
+  }
+  ctx.restore();
+
+  const toY = v => plot.y + plot.h * (1 - (v - minVal) / (maxVal - minVal));
+  const slotW = plot.w / boxes.length;
+  const boxW = Math.min(34, slotW * 0.5);
+
+  boxes.forEach((b, i) => {
+    const cx = plot.x + slotW * (i + 0.5);
+    const color = colors[i % colors.length];
+    const yMin = toY(b.min), yMax = toY(b.max);
+    const yQ1 = toY(b.q1), yQ3 = toY(b.q3), yMed = toY(b.median);
+
+    // whiskers
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, yMax); ctx.lineTo(cx, yQ3);
+    ctx.moveTo(cx, yQ1); ctx.lineTo(cx, yMin);
+    ctx.stroke();
+    // whisker caps
+    ctx.beginPath();
+    ctx.moveTo(cx - boxW / 3, yMax); ctx.lineTo(cx + boxW / 3, yMax);
+    ctx.moveTo(cx - boxW / 3, yMin); ctx.lineTo(cx + boxW / 3, yMin);
+    ctx.stroke();
+
+    // IQR box
+    ctx.fillStyle = hexToRgba(color, 0.25);
+    ctx.fillRect(cx - boxW / 2, yQ3, boxW, yQ1 - yQ3);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cx - boxW / 2, yQ3, boxW, yQ1 - yQ3);
+
+    // median line
+    ctx.beginPath();
+    ctx.moveTo(cx - boxW / 2, yMed);
+    ctx.lineTo(cx + boxW / 2, yMed);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // outliers
+    if (opts.outliers && b.outliers) {
+      b.outliers.forEach(o => {
+        ctx.beginPath();
+        ctx.arc(cx, toY(o), 2.5, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      });
+    }
+
+    // label
+    ctx.fillStyle = axisTextColor();
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(b.name, cx, plot.y + plot.h + 6);
+  });
+}
+
+/* ============================================================
+   RENDERER 9: RadarChart
+   ============================================================ */
+function renderRadarChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const axes = data.axes;
+  const series = data.series;
+  const n = axes.length;
+  const cx = w / 2;
+  const cy = h / 2 - 4;
+  const radius = Math.min(w, h) / 2 - 42;
+  const maxVal = data.max || 100;
+  const levels = 5;
+
+  const angleFor = i => -Math.PI / 2 + (i / n) * Math.PI * 2;
+
+  // concentric polygon grids
+  ctx.strokeStyle = gridColor();
+  ctx.lineWidth = 1;
+  for (let l = 1; l <= levels; l++) {
+    const r = radius * (l / levels);
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = angleFor(i % n);
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  // axis spokes + labels
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '10px -apple-system, sans-serif';
+  for (let i = 0; i < n; i++) {
+    const a = angleFor(i);
+    const x = cx + Math.cos(a) * radius;
+    const y = cy + Math.sin(a) * radius;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = gridColor();
+    ctx.stroke();
+    const lx = cx + Math.cos(a) * (radius + 12);
+    const ly = cy + Math.sin(a) * (radius + 12);
+    ctx.textAlign = Math.abs(Math.cos(a)) < 0.3 ? 'center' : (Math.cos(a) > 0 ? 'left' : 'right');
+    ctx.textBaseline = Math.abs(Math.sin(a)) < 0.3 ? 'middle' : (Math.sin(a) > 0 ? 'top' : 'bottom');
+    ctx.fillStyle = labelColor();
+    ctx.fillText(axes[i], lx, ly);
+  }
+
+  // data polygons
+  series.forEach((s, si) => {
+    const color = colors[si % colors.length];
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const idx = i % n;
+      const a = angleFor(idx);
+      const r = radius * (s.values[idx] / maxVal);
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = hexToRgba(color, opts.fill ? 0.2 : 0.08);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    if (opts.dots) {
+      for (let i = 0; i < n; i++) {
+        const a = angleFor(i);
+        const r = radius * (s.values[i] / maxVal);
+        const x = cx + Math.cos(a) * r;
+        const y = cy + Math.sin(a) * r;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+    }
+  });
+
+  drawLegend(ctx, w, h - 10, series.map(s => s.name), colors);
+}
+
+/* ============================================================
+   RENDERER 10: FunnelChart
+   ============================================================ */
+function renderFunnelChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const items = data.items;
+  const maxVal = items[0].value;
+  const pad = { l: 12, r: 12, t: 14, b: 14 };
+  const plot = { x: pad.l, y: pad.t, w: w - pad.l - pad.r, h: h - pad.t - pad.b };
+  const n = items.length;
+  const gap = 4;
+  const segH = (plot.h - gap * (n - 1)) / n;
+  const cx = plot.x + plot.w / 2;
+  const maxW = plot.w * 0.82;
+
+  items.forEach((it, i) => {
+    const ratio = it.value / maxVal;
+    const nextRatio = i < n - 1 ? items[i + 1].value / maxVal : ratio * 0.7;
+    const topW = maxW * ratio;
+    const botW = opts.pyramid ? maxW * nextRatio : topW;
+    const y = plot.y + (segH + gap) * i;
+    const color = colors[i % colors.length];
+
+    ctx.beginPath();
+    ctx.moveTo(cx - topW / 2, y);
+    ctx.lineTo(cx + topW / 2, y);
+    ctx.lineTo(cx + botW / 2, y + segH);
+    ctx.lineTo(cx - botW / 2, y + segH);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(cx - topW / 2, 0, cx + topW / 2, 0);
+    grad.addColorStop(0, hexToRgba(color, 0.85));
+    grad.addColorStop(1, color);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // center label
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 12px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(it.value.toLocaleString(), cx, y + segH / 2);
+
+    // side label
+    if (opts.labels) {
+      ctx.fillStyle = labelColor();
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      const pct = Math.round(ratio * 100);
+      ctx.fillText(it.name + ' (' + pct + '%)', plot.x + 2, y + segH / 2);
+    }
+  });
+}
+
+/* ============================================================
+   RENDERER 11: GaugeChart
+   ============================================================ */
+function renderGaugeChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const value = data.value;
+  const maxVal = data.max || 100;
+  const cx = w / 2;
+  const cy = h * 0.62;
+  const radius = Math.min(w / 2, h * 0.62) - 30;
+  const startA = Math.PI * 0.8;
+  const endA = Math.PI * 2.2;
+  const totalA = endA - startA;
+
+  // colored zones
+  const zones = opts.zones ? [
+    { to: 0.5, color: '#22c55e' },
+    { to: 0.8, color: '#eab308' },
+    { to: 1.0, color: '#ef4444' }
+  ] : [{ to: 1.0, color: colors[0] }];
+
+  let prev = 0;
+  const trackW = 14;
+  zones.forEach(z => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, startA + totalA * prev, startA + totalA * z.to);
+    ctx.strokeStyle = z.color;
+    ctx.lineWidth = trackW;
+    ctx.lineCap = 'butt';
+    ctx.stroke();
+    prev = z.to;
+  });
+
+  // tick marks
+  ctx.strokeStyle = axisTextColor();
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const majorTicks = 5;
+  for (let i = 0; i <= majorTicks; i++) {
+    const a = startA + totalA * (i / majorTicks);
+    const r1 = radius - trackW / 2 - 2;
+    const r2 = radius - trackW / 2 - 8;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+    ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+    ctx.stroke();
+    const lr = radius - trackW / 2 - 18;
+    ctx.fillText(Math.round(maxVal * i / majorTicks),
+      cx + Math.cos(a) * lr, cy + Math.sin(a) * lr);
+  }
+
+  // needle
+  const valA = startA + totalA * (value / maxVal);
+  const needleLen = radius - trackW - 4;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(valA);
+  ctx.beginPath();
+  ctx.moveTo(-6, 0);
+  ctx.lineTo(0, -4);
+  ctx.lineTo(needleLen, 0);
+  ctx.lineTo(0, 4);
+  ctx.closePath();
+  ctx.fillStyle = isDark() ? '#f1f5f9' : '#334155';
+  ctx.fill();
+  ctx.restore();
+
+  // hub
+  ctx.beginPath();
+  ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+  ctx.fillStyle = isDark() ? '#f1f5f9' : '#334155';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+  ctx.fillStyle = bgColor();
+  ctx.fill();
+
+  // value text
+  ctx.fillStyle = labelColor();
+  ctx.font = '700 28px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(value), cx, cy + radius * 0.5);
+  ctx.font = '11px -apple-system, sans-serif';
+  ctx.fillStyle = axisTextColor();
+  ctx.fillText(data.unit || 'km/h', cx, cy + radius * 0.5 + 20);
+}
+
+/* ============================================================
+   RENDERER 12: WaterfallChart
+   ============================================================ */
+function renderWaterfallChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const items = data.items;
+  // compute running totals
+  let running = 0;
+  const bars = [];
+  let maxTop = 0;
+  items.forEach(it => {
+    if (it.total) {
+      bars.push({ name: it.name, start: 0, end: it.value, isTotal: true });
+      running = it.value;
+    } else {
+      const start = running;
+      running += it.value;
+      bars.push({ name: it.name, start: start, end: running, isTotal: false, delta: it.value });
+    }
+    maxTop = Math.max(maxTop, running, it.total ? it.value : 0);
+  });
+  maxTop = niceMax(maxTop * 1.12);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxTop, { steps: 4 });
+  drawXLabels(ctx, plot, bars.map(b => b.name));
+
+  const slotW = plot.w / bars.length;
+  const barW = slotW * 0.56;
+  const toY = v => plot.y + plot.h * (1 - v / maxTop);
+
+  bars.forEach((b, i) => {
+    const cx = plot.x + slotW * (i + 0.5);
+    const yTop = toY(Math.max(b.start, b.end));
+    const yBot = toY(Math.min(b.start, b.end));
+    let color;
+    if (b.isTotal) color = colors[0];
+    else color = b.delta >= 0 ? '#22c55e' : '#ef4444';
+
+    ctx.fillStyle = color;
+    roundRectPath(ctx, cx - barW / 2, yTop, barW, Math.max(1, yBot - yTop), 3);
+    ctx.fill();
+
+    // connector line to next
+    if (opts.connectors && i < bars.length - 1) {
+      ctx.strokeStyle = gridColor();
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      const yEnd = toY(b.end);
+      ctx.beginPath();
+      ctx.moveTo(cx + barW / 2, yEnd);
+      ctx.lineTo(cx + slotW - barW / 2, yEnd);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if (opts.values) {
+      ctx.fillStyle = axisTextColor();
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const txt = b.isTotal ? b.end : (b.delta >= 0 ? '+' + b.delta : b.delta);
+      ctx.fillText(txt, cx, yTop - 3);
+    }
+  });
+}
+
+/* ============================================================
+   RENDERER 13: CandlestickChart
+   ============================================================ */
+function renderCandlestickChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const candles = data.candles;
+  let maxVal = -Infinity, minVal = Infinity;
+  candles.forEach(c => {
+    maxVal = Math.max(maxVal, c.high);
+    minVal = Math.min(minVal, c.low);
+  });
+  const range = maxVal - minVal || 1;
+  maxVal += range * 0.05;
+  minVal -= range * 0.05;
+
+  const pad = { l: 38, r: 14, t: 16, b: 28 };
+  const plot = { x: pad.l, y: pad.t, w: w - pad.l - pad.r, h: h - pad.t - pad.b };
+
+  // grid + price labels
+  ctx.save();
+  ctx.strokeStyle = gridColor();
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '9px -apple-system, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    const y = plot.y + plot.h * (1 - t);
+    ctx.beginPath();
+    ctx.moveTo(plot.x, y);
+    ctx.lineTo(plot.x + plot.w, y);
+    ctx.stroke();
+    ctx.fillText((minVal + (maxVal - minVal) * t).toFixed(0), plot.x - 6, y);
+  }
+  ctx.restore();
+
+  const toY = v => plot.y + plot.h * (1 - (v - minVal) / (maxVal - minVal));
+  const slotW = plot.w / candles.length;
+  const bodyW = Math.max(2, slotW * 0.6);
+  const upColor = '#22c55e', downColor = '#ef4444';
+
+  candles.forEach((c, i) => {
+    const cx = plot.x + slotW * (i + 0.5);
+    const up = c.close >= c.open;
+    const color = up ? upColor : downColor;
+    // wick
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, toY(c.high));
+    ctx.lineTo(cx, toY(c.low));
+    ctx.stroke();
+    // body
+    const yOpen = toY(c.open), yClose = toY(c.close);
+    const bodyTop = Math.min(yOpen, yClose);
+    const bodyH = Math.max(1.5, Math.abs(yClose - yOpen));
+    if (opts.hollow && up) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(cx - bodyW / 2, bodyTop, bodyW, bodyH);
+    } else {
+      ctx.fillStyle = color;
+      ctx.fillRect(cx - bodyW / 2, bodyTop, bodyW, bodyH);
+    }
+  });
+
+  // MA line
+  if (opts.ma) {
+    const period = 5;
+    ctx.beginPath();
+    let started = false;
+    candles.forEach((c, i) => {
+      if (i < period - 1) return;
+      let sum = 0;
+      for (let k = 0; k < period; k++) sum += candles[i - k].close;
+      const ma = sum / period;
+      const cx = plot.x + slotW * (i + 0.5);
+      const y = toY(ma);
+      if (!started) { ctx.moveTo(cx, y); started = true; }
+      else ctx.lineTo(cx, y);
+    });
+    ctx.strokeStyle = colors[4] || '#722ed1';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+/* ============================================================
+   RENDERER 14: HeatmapChart
+   ============================================================ */
+function renderHeatmapChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const grid = data.grid;
+  const xLabels = data.xLabels;
+  const yLabels = data.yLabels;
+  const rows = grid.length;
+  const cols = grid[0].length;
+  let maxVal = -Infinity, minVal = Infinity;
+  grid.forEach(row => row.forEach(v => {
+    maxVal = Math.max(maxVal, v);
+    minVal = Math.min(minVal, v);
+  }));
+
+  const pad = { l: 34, r: 10, t: 22, b: 10 };
+  const plot = { x: pad.l, y: pad.t, w: w - pad.l - pad.r, h: h - pad.t - pad.b };
+  const cellW = plot.w / cols;
+  const cellH = plot.h / rows;
+  const gap = opts.gap ? 2 : 0.5;
+  const baseColor = colors[0];
+
+  const heatColor = t => {
+    if (opts.mono) {
+      return hexToRgba(baseColor, 0.12 + t * 0.88);
+    }
+    // blue -> green -> yellow -> red
+    const stops = ['#1677ff', '#52c41a', '#fadb14', '#fa541c'];
+    const seg = t * (stops.length - 1);
+    const idx = Math.min(stops.length - 2, Math.floor(seg));
+    const f = seg - idx;
+    return mixHex(stops[idx], stops[idx + 1], f);
+  };
+
+  // x labels
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '9px -apple-system, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  xLabels.forEach((lb, c) => {
+    ctx.fillText(lb, plot.x + cellW * (c + 0.5), plot.y - 4);
+  });
+  // y labels
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  yLabels.forEach((lb, r) => {
+    ctx.fillText(lb, plot.x - 5, plot.y + cellH * (r + 0.5));
+  });
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const v = grid[r][c];
+      const t = (v - minVal) / (maxVal - minVal || 1);
+      ctx.fillStyle = heatColor(t);
+      const x = plot.x + cellW * c + gap / 2;
+      const y = plot.y + cellH * r + gap / 2;
+      if (opts.round) {
+        roundRectPath(ctx, x, y, cellW - gap, cellH - gap, 3);
+        ctx.fill();
+      } else {
+        ctx.fillRect(x, y, cellW - gap, cellH - gap);
+      }
+      if (opts.values && cellW > 20 && cellH > 14) {
+        ctx.fillStyle = t > 0.55 ? '#fff' : '#334155';
+        ctx.font = '8px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(v, plot.x + cellW * (c + 0.5), plot.y + cellH * (r + 0.5));
+      }
+    }
+  }
+}
+
+function mixHex(a, b, t) {
+  const pa = parseHex(a), pb = parseHex(b);
+  const r = Math.round(pa[0] + (pb[0] - pa[0]) * t);
+  const g = Math.round(pa[1] + (pb[1] - pa[1]) * t);
+  const bl = Math.round(pa[2] + (pb[2] - pa[2]) * t);
+  return 'rgb(' + r + ',' + g + ',' + bl + ')';
+}
+function parseHex(hex) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)];
+}
+
+/* ============================================================
+   RENDERER 15: TreemapChart (slice-and-dice)
+   ============================================================ */
+function renderTreemapChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const items = data.items.slice().sort((a, b) => b.value - a.value);
+  const total = items.reduce((a, b) => a + b.value, 0);
+  const pad = 6;
+  const rect = { x: pad, y: pad, w: w - pad * 2, h: h - pad * 2 };
+
+  const cells = squarify(items, rect, total);
+
+  cells.forEach((cell, i) => {
+    const color = colors[i % colors.length];
+    const gap = opts.gap ? 3 : 1.5;
+    const x = cell.x + gap / 2;
+    const y = cell.y + gap / 2;
+    const cw = cell.w - gap;
+    const ch = cell.h - gap;
+    if (cw <= 0 || ch <= 0) return;
+    const grad = ctx.createLinearGradient(x, y, x + cw, y + ch);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, hexToRgba(color, 0.78));
+    ctx.fillStyle = grad;
+    roundRectPath(ctx, x, y, cw, ch, opts.round ? 6 : 2);
+    ctx.fill();
+
+    if (cw > 42 && ch > 26) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '700 11px -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(cell.item.name, x + 6, y + 5);
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      const pct = Math.round((cell.item.value / total) * 100);
+      ctx.fillText(cell.item.value + ' (' + pct + '%)', x + 6, y + 19);
+    } else if (cw > 24 && ch > 14) {
+      ctx.fillStyle = '#fff';
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cell.item.name, x + cw / 2, y + ch / 2);
+    }
+  });
+}
+
+function squarify(items, rect, total) {
+  // simplified slice-and-dice: alternate horizontal/vertical
+  const cells = [];
+  let area = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+  let remaining = total;
+  let horizontal = rect.w >= rect.h;
+  let list = items.slice();
+  let i = 0;
+  while (list.length > 0) {
+    const it = list.shift();
+    const frac = it.value / remaining;
+    if (horizontal) {
+      const cw = area.w * frac;
+      cells.push({ item: it, x: area.x, y: area.y, w: cw, h: area.h });
+      area = { x: area.x + cw, y: area.y, w: area.w - cw, h: area.h };
+    } else {
+      const chh = area.h * frac;
+      cells.push({ item: it, x: area.x, y: area.y, w: area.w, h: chh });
+      area = { x: area.x, y: area.y + chh, w: area.w, h: area.h - chh };
+    }
+    remaining -= it.value;
+    horizontal = area.w >= area.h;
+    i++;
+  }
+  return cells;
+}
+
+/* ============================================================
+   RENDERER 16: SankeyChart
+   ============================================================ */
+function renderSankeyChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const nodes = data.nodes;
+  const links = data.links;
+  const pad = { l: 10, r: 10, t: 14, b: 14 };
+  const plot = { x: pad.l, y: pad.t, w: w - pad.l - pad.r, h: h - pad.t - pad.b };
+
+  // group nodes by column
+  const cols = {};
+  nodes.forEach(n => { (cols[n.col] = cols[n.col] || []).push(n); });
+  const colKeys = Object.keys(cols).map(Number).sort((a, b) => a - b);
+  const nodeW = 12;
+  const colGap = (plot.w - nodeW) / (colKeys.length - 1);
+
+  // compute node throughput
+  const nodeMap = {};
+  nodes.forEach(n => { nodeMap[n.id] = { ...n, inSum: 0, outSum: 0, srcOff: 0, dstOff: 0 }; });
+  links.forEach(l => {
+    nodeMap[l.source].outSum += l.value;
+    nodeMap[l.target].inSum += l.value;
+  });
+
+  // layout each column vertically
+  const scaleRef = Math.max(...Object.values(nodeMap).map(n => Math.max(n.inSum, n.outSum)));
+  const unit = (plot.h * 0.6) / scaleRef;
+
+  colKeys.forEach((ck, ci) => {
+    const colNodes = cols[ck];
+    let totalH = 0;
+    colNodes.forEach(n => {
+      const nm = nodeMap[n.id];
+      nm.h = Math.max(6, Math.max(nm.inSum, nm.outSum) * unit);
+      totalH += nm.h;
+    });
+    const spacing = colNodes.length > 1 ? (plot.h - totalH) / (colNodes.length + 1) : (plot.h - totalH) / 2;
+    let y = plot.y + spacing;
+    colNodes.forEach(n => {
+      const nm = nodeMap[n.id];
+      nm.x = plot.x + colGap * ci;
+      nm.y = y;
+      y += nm.h + spacing;
+    });
+  });
+
+  // draw links (bezier)
+  links.forEach((l, li) => {
+    const s = nodeMap[l.source];
+    const t = nodeMap[l.target];
+    const lw = Math.max(1, l.value * unit);
+    const sy = s.y + s.srcOff + lw / 2;
+    const ty = t.y + t.dstOff + lw / 2;
+    s.srcOff += lw;
+    t.dstOff += lw;
+    const x1 = s.x + nodeW;
+    const x2 = t.x;
+    const mx = (x1 + x2) / 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, sy);
+    ctx.bezierCurveTo(mx, sy, mx, ty, x2, ty);
+    const color = colors[s.col % colors.length];
+    ctx.strokeStyle = hexToRgba(color, 0.32);
+    ctx.lineWidth = lw;
+    ctx.stroke();
+  });
+
+  // draw nodes
+  nodes.forEach(n => {
+    const nm = nodeMap[n.id];
+    const color = colors[n.col % colors.length];
+    ctx.fillStyle = color;
+    roundRectPath(ctx, nm.x, nm.y, nodeW, nm.h, 2);
+    ctx.fill();
+    ctx.fillStyle = labelColor();
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textBaseline = 'middle';
+    const lastCol = n.col === colKeys[colKeys.length - 1];
+    if (lastCol) {
+      ctx.textAlign = 'right';
+      ctx.fillText(n.name, nm.x - 4, nm.y + nm.h / 2);
+    } else {
+      ctx.textAlign = 'left';
+      ctx.fillText(n.name, nm.x + nodeW + 4, nm.y + nm.h / 2);
+    }
+  });
+}
+
+/* ============================================================
+   RENDERER 17: NightingaleRoseChart
+   ============================================================ */
+function renderNightingaleRoseChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const items = data.items;
+  const n = items.length;
+  const cx = w / 2;
+  const cy = h / 2 - 2;
+  const maxR = Math.min(w, h) / 2 - 30;
+  let maxVal = 0;
+  items.forEach(it => { if (it.value > maxVal) maxVal = it.value; });
+  const anglePer = (Math.PI * 2) / n;
+  const gap = opts.gap ? 0.04 : 0;
+  const minR = 8;
+
+  // reference rings
+  ctx.strokeStyle = gridColor();
+  ctx.lineWidth = 1;
+  for (let l = 1; l <= 4; l++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, maxR * (l / 4), 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  items.forEach((it, i) => {
+    const start = -Math.PI / 2 + anglePer * i + gap;
+    const end = start + anglePer - gap * 2;
+    const r = opts.area
+      ? minR + (maxR - minR) * Math.sqrt(it.value / maxVal)
+      : minR + (maxR - minR) * (it.value / maxVal);
+    const color = colors[i % colors.length];
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    const grad = ctx.createRadialGradient(cx, cy, minR, cx, cy, r);
+    grad.addColorStop(0, hexToRgba(color, 0.65));
+    grad.addColorStop(1, color);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = bgColor();
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // outer label
+    if (opts.labels) {
+      const mid = (start + end) / 2;
+      const lr = r + 12;
+      const lx = cx + Math.cos(mid) * lr;
+      const ly = cy + Math.sin(mid) * lr;
+      ctx.fillStyle = labelColor();
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(it.name, lx, ly);
+    }
+  });
+}
+
+/* ============================================================
+   RENDERER 18: CalendarHeatmap
+   ============================================================ */
+function renderCalendarHeatmap(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const weeks = 52;
+  const days = 7;
+  const values = data.values; // weeks*days flat
+  const pad = { l: 26, r: 6, t: 18, b: 6 };
+  const plot = { x: pad.l, y: pad.t, w: w - pad.l - pad.r, h: h - pad.t - pad.b };
+  const cell = Math.min((plot.w) / weeks, (plot.h) / days);
+  const gap = cell * 0.14;
+  const size = cell - gap;
+  const baseColor = colors[0];
+
+  const levelColor = lvl => {
+    if (lvl === 0) return isDark() ? '#1e293b' : '#ebedf0';
+    return hexToRgba(baseColor, 0.25 + lvl * 0.25);
+  };
+
+  // weekday labels
+  ctx.fillStyle = axisTextColor();
+  ctx.font = '8px -apple-system, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ['Mon', 'Wed', 'Fri'].forEach((d, i) => {
+    const row = i * 2 + 1;
+    ctx.fillText(d, plot.x - 4, plot.y + cell * row + size / 2);
+  });
+
+  // month labels (approx every ~4.3 weeks)
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'bottom';
+  for (let m = 0; m < 12; m++) {
+    const wk = Math.round(m * (weeks / 12));
+    ctx.fillText(MONTHS[m], plot.x + wk * cell, plot.y - 3);
+  }
+
+  let idx = 0;
+  for (let wk = 0; wk < weeks; wk++) {
+    for (let d = 0; d < days; d++) {
+      const lvl = values[idx++] || 0;
+      const x = plot.x + wk * cell;
+      const y = plot.y + d * cell;
+      ctx.fillStyle = levelColor(lvl);
+      roundRectPath(ctx, x, y, size, size, 1.5);
+      ctx.fill();
+    }
+  }
+
+  // legend
+  if (opts.legend) {
+    ctx.fillStyle = axisTextColor();
+    ctx.font = '8px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const ly = plot.y + plot.h - size;
+    let lx = plot.x + plot.w - (size + gap) * 5 - 40;
+    ctx.fillText('Less', lx - 24, ly + size / 2);
+    for (let l = 0; l <= 4; l++) {
+      ctx.fillStyle = levelColor(l);
+      roundRectPath(ctx, lx, ly, size, size, 1.5);
+      ctx.fill();
+      lx += size + gap;
+    }
+    ctx.fillStyle = axisTextColor();
+    ctx.fillText('More', lx + 3, ly + size / 2);
+  }
+}
+
+/* ============================================================
+   RENDERER 19: MixedChart (bar + line)
+   ============================================================ */
+function renderMixedChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const labels = data.labels;
+  const bar = data.bar;
+  const line = data.line;
+  let maxBar = 0, maxLine = 0;
+  bar.values.forEach(v => { if (v > maxBar) maxBar = v; });
+  line.values.forEach(v => { if (v > maxLine) maxLine = v; });
+  maxBar = niceMax(maxBar * 1.15);
+  maxLine = niceMax(maxLine * 1.2);
+
+  const pad = { l: 34, r: 34, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxBar, { steps: 4 });
+  drawXLabels(ctx, plot, labels);
+
+  // right axis labels for line
+  ctx.save();
+  ctx.fillStyle = colors[1];
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const t = i / 4;
+    const y = plot.y + plot.h * (1 - t);
+    ctx.fillText(Math.round(maxLine * t), plot.x + plot.w + 6, y);
+  }
+  ctx.restore();
+
+  const slotW = plot.w / labels.length;
+  const barW = slotW * 0.5;
+
+  // bars
+  bar.values.forEach((v, i) => {
+    const bh = plot.h * (v / maxBar);
+    const bx = plot.x + slotW * i + (slotW - barW) / 2;
+    const by = plot.y + plot.h - bh;
+    const color = colors[0];
+    const grad = ctx.createLinearGradient(0, by, 0, by + bh);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, hexToRgba(color, 0.7));
+    ctx.fillStyle = grad;
+    roundRectPath(ctx, bx, by, barW, bh, 3);
+    ctx.fill();
+  });
+
+  // line
+  const linePts = line.values.map((v, i) => ({
+    x: plot.x + slotW * (i + 0.5),
+    y: plot.y + plot.h * (1 - v / maxLine)
+  }));
+  ctx.beginPath();
+  buildLinePath(ctx, linePts, opts.smooth, false, false);
+  ctx.strokeStyle = colors[1];
+  ctx.lineWidth = 2.4;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  linePts.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = bgColor();
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = colors[1];
+    ctx.stroke();
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, [bar.name, line.name], colors);
+}
+
+/* ============================================================
+   RENDERER 20: SparklineChart
+   ============================================================ */
+function renderSparklineChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const rows = data.rows;
+  const rowH = h / rows.length;
+  const labelW = 62;
+  const valW = 48;
+  const chartX = labelW + 8;
+  const chartW = w - chartX - valW - 8;
+
+  rows.forEach((row, ri) => {
+    const y0 = rowH * ri;
+    const color = colors[ri % colors.length];
+    const vals = row.values;
+    let mn = Math.min(...vals), mx = Math.max(...vals);
+    if (mn === mx) { mn -= 1; mx += 1; }
+    const cy0 = y0 + rowH * 0.28;
+    const ch = rowH * 0.44;
+    const toXY = (i) => ({
+      x: chartX + chartW * (i / (vals.length - 1)),
+      y: cy0 + ch * (1 - (vals[i] - mn) / (mx - mn))
+    });
+    const pts = vals.map((v, i) => toXY(i));
+
+    // label
+    ctx.fillStyle = labelColor();
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(row.name, 2, y0 + rowH / 2);
+
+    // area
+    if (opts.area) {
+      const grad = ctx.createLinearGradient(0, cy0, 0, cy0 + ch);
+      grad.addColorStop(0, hexToRgba(color, 0.3));
+      grad.addColorStop(1, hexToRgba(color, 0.02));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, cy0 + ch);
+      buildLinePath(ctx, pts, opts.smooth, false, true);
+      ctx.lineTo(pts[pts.length - 1].x, cy0 + ch);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // line
+    ctx.beginPath();
+    buildLinePath(ctx, pts, opts.smooth, false, false);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // end dot
+    if (opts.endDot) {
+      const last = pts[pts.length - 1];
+      ctx.beginPath();
+      ctx.arc(last.x, last.y, 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // value + trend
+    const last = vals[vals.length - 1];
+    const prev = vals[vals.length - 2];
+    const trendUp = last >= prev;
+    ctx.fillStyle = trendUp ? '#22c55e' : '#ef4444';
+    ctx.font = '700 11px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText((trendUp ? '▲ ' : '▼ ') + last, w - 4, y0 + rowH / 2);
+
+    // separator
+    if (ri < rows.length - 1) {
+      ctx.strokeStyle = gridColor();
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, y0 + rowH);
+      ctx.lineTo(w, y0 + rowH);
+      ctx.stroke();
+    }
+  });
+}
+
+/* ============================================================
+   RENDERER 21: ProgressRingChart
+   ============================================================ */
+function renderProgressRingChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const rings = data.rings;
+  const cx = w / 2;
+  const cy = h / 2 - 2;
+  const maxOuter = Math.min(w, h) / 2 - 16;
+  const ringW = Math.min(16, maxOuter / (rings.length + 1.2));
+  const ringGap = ringW * 0.35;
+  const startA = -Math.PI / 2;
+
+  rings.forEach((ring, i) => {
+    const r = maxOuter - i * (ringW + ringGap);
+    const color = colors[i % colors.length];
+    const pct = Math.min(1, ring.value / ring.max);
+
+    // track
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = isDark() ? 'rgba(148,163,184,0.15)' : 'rgba(100,116,139,0.13)';
+    ctx.lineWidth = ringW;
+    ctx.stroke();
+
+    // progress
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startA, startA + Math.PI * 2 * pct);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = ringW;
+    ctx.lineCap = opts.rounded ? 'round' : 'butt';
+    ctx.stroke();
+  });
+
+  // center summary
+  if (opts.centerText) {
+    const avg = Math.round(rings.reduce((a, b) => a + b.value / b.max, 0) / rings.length * 100);
+    ctx.fillStyle = labelColor();
+    ctx.font = '700 22px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(avg + '%', cx, cy - 4);
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = axisTextColor();
+    ctx.fillText('Overall', cx, cy + 14);
+  }
+
+  // legend below
+  ctx.font = '10px -apple-system, sans-serif';
+  ctx.textBaseline = 'middle';
+  const legendY = h - rings.length * 15 + 4;
+  rings.forEach((ring, i) => {
+    const ly = legendY + i * 15;
+    const color = colors[i % colors.length];
+    ctx.fillStyle = color;
+    roundRectPath(ctx, 6, ly - 4, 8, 8, 2);
+    ctx.fill();
+    ctx.fillStyle = labelColor();
+    ctx.textAlign = 'left';
+    ctx.fillText(ring.name, 20, ly);
+    ctx.fillStyle = axisTextColor();
+    ctx.textAlign = 'right';
+    ctx.fillText(Math.round(ring.value / ring.max * 100) + '%', w - 6, ly);
+  });
+}
+
+/* ============================================================
+   RENDERER 22: StackedBarChart
+   ============================================================ */
+function renderStackedBarChart(canvas, data, opts, colors) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  const labels = data.labels;
+  const series = data.series;
+  // totals per label
+  const totals = labels.map((_, gi) => series.reduce((a, s) => a + s.values[gi], 0));
+  let maxTotal = Math.max(...totals);
+  if (opts.percent) maxTotal = 100;
+  maxTotal = opts.percent ? 100 : niceMax(maxTotal * 1.1);
+
+  const pad = { l: 34, r: 14, t: 16, b: 34 };
+  const plot = drawGrid(ctx, w, h, pad, maxTotal, { steps: 4 });
+  drawXLabels(ctx, plot, labels);
+
+  const slotW = plot.w / labels.length;
+  const barW = opts.horizontal ? 0 : slotW * 0.56;
+
+  labels.forEach((lb, gi) => {
+    const cx = plot.x + slotW * (gi + 0.5);
+    let acc = 0;
+    const denom = opts.percent ? totals[gi] : 1;
+    series.forEach((s, si) => {
+      const raw = s.values[gi];
+      const v = opts.percent ? (raw / denom) * 100 : raw;
+      const segH = plot.h * (v / maxTotal);
+      const yTop = plot.y + plot.h - (plot.h * (acc / maxTotal)) - segH;
+      const color = colors[si % colors.length];
+      ctx.fillStyle = color;
+      const isTop = si === series.length - 1;
+      const isBot = si === 0;
+      if (isTop || isBot) {
+        roundRectPath(ctx, cx - barW / 2, yTop, barW, segH, 3);
+        ctx.fill();
+        // square off inner corner by overpainting - simpler: just fillRect for middle
+      } else {
+        ctx.fillRect(cx - barW / 2, yTop, barW, segH);
+      }
+      if (opts.values && segH > 12) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '9px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(opts.percent ? Math.round(v) + '%' : raw, cx, yTop + segH / 2);
+      }
+      acc += v;
+    });
+  });
+
+  drawLegend(ctx, w, plot.y + plot.h + 22, series.map(s => s.name), colors);
+}
+
+/* ============================================================
+   RENDERER MAP
+   ============================================================ */
+const renderers = {
+  LineChart: renderLineChart,
+  BarChart: renderBarChart,
+  AreaChart: renderAreaChart,
+  PieChart: renderPieChart,
+  DonutChart: renderDonutChart,
+  ScatterChart: renderScatterChart,
+  BubbleChart: renderBubbleChart,
+  BoxplotChart: renderBoxplotChart,
+  RadarChart: renderRadarChart,
+  FunnelChart: renderFunnelChart,
+  GaugeChart: renderGaugeChart,
+  WaterfallChart: renderWaterfallChart,
+  CandlestickChart: renderCandlestickChart,
+  HeatmapChart: renderHeatmapChart,
+  TreemapChart: renderTreemapChart,
+  SankeyChart: renderSankeyChart,
+  NightingaleRoseChart: renderNightingaleRoseChart,
+  CalendarHeatmap: renderCalendarHeatmap,
+  MixedChart: renderMixedChart,
+  SparklineChart: renderSparklineChart,
+  ProgressRingChart: renderProgressRingChart,
+  StackedBarChart: renderStackedBarChart
+};
+
+/* ============================================================
+   DATA GENERATORS - domain-appropriate realistic values
+   ============================================================ */
+const WEEK_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+const MONTH_LABELS = ['1月', '2月', '3月', '4月', '5月', '6月'];
+const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+const dataGenerators = {
+  LineChart() {
+    return {
+      labels: WEEK_LABELS,
+      series: [
+        { name: '访问量', values: smoothSeries(7, 200, 900) },
+        { name: '下单量', values: smoothSeries(7, 80, 500) }
+      ]
+    };
+  },
+  BarChart() {
+    return {
+      labels: MONTH_LABELS,
+      series: [
+        { name: '线上', values: seriesData(6, 40, 200) },
+        { name: '线下', values: seriesData(6, 30, 160) }
+      ]
+    };
+  },
+  AreaChart() {
+    return {
+      labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+      series: [
+        { name: 'CPU %', values: smoothSeries(6, 20, 95) },
+        { name: '内存 %', values: smoothSeries(6, 30, 80) }
+      ]
+    };
+  },
+  PieChart() {
+    const names = ['iOS', 'Android', 'HarmonyOS', 'Web', 'Others'];
+    return { items: names.map(n => ({ name: n, value: randInt(50, 400) })) };
+  },
+  DonutChart() {
+    const names = ['餐饮', '交通', '购物', '娱乐', '住房'];
+    return {
+      items: names.map(n => ({ name: n, value: randInt(500, 3000) })),
+      centerLabel: '总支出'
+    };
+  },
+  ScatterChart() {
+    const mk = (n, sx, sy) => {
+      const pts = [];
+      for (let i = 0; i < n; i++) {
+        const x = randInt(5, 95);
+        pts.push({ x, y: Math.max(2, x * sy + randInt(-20, 20) + sx) });
+      }
+      return pts;
+    };
+    return {
+      groups: [
+        { name: 'A组', points: mk(16, 5, 0.8) },
+        { name: 'B组', points: mk(16, 25, 0.4) }
+      ]
+    };
+  },
+  BubbleChart() {
+    const mk = (n) => {
+      const pts = [];
+      for (let i = 0; i < n; i++) pts.push({ x: randInt(5, 95), y: randInt(5, 95), z: randInt(10, 100) });
+      return pts;
+    };
+    return {
+      groups: [
+        { name: '一线城市', points: mk(9) },
+        { name: '二线城市', points: mk(9) }
+      ]
+    };
+  },
+  BoxplotChart() {
+    const mkBox = (name, center, spread) => {
+      const min = center - spread - randInt(0, 8);
+      const q1 = center - spread / 2;
+      const median = center + randInt(-4, 4);
+      const q3 = center + spread / 2;
+      const max = center + spread + randInt(0, 8);
+      const outliers = [];
+      if (Math.random() > 0.4) outliers.push(max + randInt(6, 16));
+      if (Math.random() > 0.6) outliers.push(min - randInt(6, 16));
+      return { name, min, q1, median, q3, max, outliers };
+    };
+    return {
+      boxes: ['实验A', '实验B', '实验C', '实验D'].map((n, i) =>
+        mkBox(n, randInt(40, 70), randInt(10, 22)))
+    };
+  },
+  RadarChart() {
+    const axes = ['速度', '力量', '防御', '魔法', '敏捷', '智力'];
+    const mk = () => axes.map(() => randInt(30, 100));
+    return {
+      axes, max: 100,
+      series: [
+        { name: '战士', values: mk() },
+        { name: '法师', values: mk() }
+      ]
+    };
+  },
+  FunnelChart() {
+    let v = randInt(8000, 12000);
+    const names = ['曝光', '点击', '加购', '下单', '支付'];
+    const items = names.map(n => {
+      const item = { name: n, value: v };
+      v = Math.round(v * randFloat(0.45, 0.75));
+      return item;
+    });
+    return { items };
+  },
+  GaugeChart() {
+    return { value: randInt(20, 180), max: 200, unit: 'km/h' };
+  },
+  WaterfallChart() {
+    return {
+      items: [
+        { name: '期初', value: randInt(80, 120), total: true },
+        { name: '营收', value: randInt(30, 90) },
+        { name: '成本', value: -randInt(20, 60) },
+        { name: '税费', value: -randInt(5, 25) },
+        { name: '其他', value: randInt(-15, 30) },
+        { name: '期末', value: 0, total: true }
+      ].map((it, i, arr) => {
+        if (it.name === '期末') {
+          let run = arr[0].value;
+          for (let k = 1; k < arr.length - 1; k++) run += arr[k].value;
+          it.value = run;
+        }
+        return it;
+      })
+    };
+  },
+  CandlestickChart() {
+    const candles = [];
+    let price = randInt(80, 120);
+    for (let i = 0; i < 16; i++) {
+      const open = price;
+      const change = randFloat(-8, 8);
+      const close = Math.max(10, open + change);
+      const high = Math.max(open, close) + randFloat(0, 5);
+      const low = Math.min(open, close) - randFloat(0, 5);
+      candles.push({ open: +open.toFixed(1), close: +close.toFixed(1), high: +high.toFixed(1), low: +low.toFixed(1) });
+      price = close;
+    }
+    return { candles };
+  },
+  HeatmapChart() {
+    const xLabels = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    const yLabels = ['早', '午', '晚'];
+    const grid = yLabels.map(() => xLabels.map(() => randInt(0, 100)));
+    return { grid, xLabels, yLabels };
+  },
+  TreemapChart() {
+    const names = ['技术部', '产品部', '设计部', '运营部', '市场部', '销售部', '财务部', '人事部'];
+    return { items: names.map(n => ({ name: n, value: randInt(20, 300) })) };
+  },
+  SankeyChart() {
+    return {
+      nodes: [
+        { id: 'a', name: '访客', col: 0 },
+        { id: 'b', name: '注册', col: 0 },
+        { id: 'c', name: '活跃', col: 1 },
+        { id: 'd', name: '沉默', col: 1 },
+        { id: 'e', name: '付费', col: 2 },
+        { id: 'f', name: '流失', col: 2 }
+      ],
+      links: [
+        { source: 'a', target: 'c', value: randInt(40, 80) },
+        { source: 'a', target: 'd', value: randInt(20, 50) },
+        { source: 'b', target: 'c', value: randInt(30, 60) },
+        { source: 'b', target: 'd', value: randInt(10, 30) },
+        { source: 'c', target: 'e', value: randInt(30, 70) },
+        { source: 'c', target: 'f', value: randInt(10, 30) },
+        { source: 'd', target: 'f', value: randInt(20, 50) }
+      ]
+    };
+  },
+  NightingaleRoseChart() {
+    const names = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月'];
+    return { items: names.map(n => ({ name: n, value: randInt(20, 100) })) };
+  },
+  CalendarHeatmap() {
+    const values = [];
+    for (let i = 0; i < 52 * 7; i++) {
+      const r = Math.random();
+      let lvl = 0;
+      if (r > 0.55) lvl = 1;
+      if (r > 0.75) lvl = 2;
+      if (r > 0.88) lvl = 3;
+      if (r > 0.96) lvl = 4;
+      values.push(lvl);
+    }
+    return { values };
+  },
+  MixedChart() {
+    return {
+      labels: MONTH_LABELS,
+      bar: { name: '销售额', values: seriesData(6, 40, 200) },
+      line: { name: '增长率 %', values: smoothSeries(6, 5, 60) }
+    };
+  },
+  SparklineChart() {
+    const names = ['DAU', 'GMV', '订单', '退款', '客单价', '转化率'];
+    return {
+      rows: names.slice(0, 6).map(n => ({
+        name: n,
+        values: smoothSeries(20, 20, 100)
+      }))
+    };
+  },
+  ProgressRingChart() {
+    return {
+      rings: [
+        { name: 'Move', value: randInt(200, 600), max: 600 },
+        { name: 'Exercise', value: randInt(10, 40), max: 40 },
+        { name: 'Stand', value: randInt(4, 12), max: 12 }
+      ]
+    };
+  },
+  StackedBarChart() {
+    return {
+      labels: QUARTER_LABELS,
+      series: [
+        { name: '产品A', values: seriesData(4, 20, 90) },
+        { name: '产品B', values: seriesData(4, 15, 70) },
+        { name: '产品C', values: seriesData(4, 10, 60) }
+      ]
+    };
+  }
+};
+
+/* ============================================================
+   TOGGLE CONFIGS - chart-specific checkboxes and defaults
+   ============================================================ */
+const TOGGLE_CONFIG = {
+  LineChart: [
+    { key: 'smooth', label: '贝塞尔平滑', def: true },
+    { key: 'dots', label: '数据点圆圈', def: true },
+    { key: 'area', label: '面积填充', def: false },
+    { key: 'step', label: '阶梯折线', def: false }
+  ],
+  BarChart: [
+    { key: 'values', label: '显示数值标签', def: false }
+  ],
+  AreaChart: [
+    { key: 'smooth', label: '平滑曲线', def: true },
+    { key: 'dots', label: '数据点', def: false }
+  ],
+  PieChart: [
+    { key: 'labels', label: '引导线标签', def: true }
+  ],
+  DonutChart: [
+    { key: 'gap', label: '扇区间隙', def: true },
+    { key: 'thick', label: '加粗圆环', def: false },
+    { key: 'legend', label: '底部图例', def: true }
+  ],
+  ScatterChart: [
+    { key: 'trend', label: '趋势线', def: true }
+  ],
+  BubbleChart: [
+    { key: 'zLabels', label: '气泡数值', def: false }
+  ],
+  BoxplotChart: [
+    { key: 'outliers', label: '显示离群点', def: true }
+  ],
+  RadarChart: [
+    { key: 'fill', label: '区域填充', def: true },
+    { key: 'dots', label: '顶点圆圈', def: true }
+  ],
+  FunnelChart: [
+    { key: 'labels', label: '侧边标签', def: true },
+    { key: 'pyramid', label: '金字塔模式', def: false }
+  ],
+  GaugeChart: [
+    { key: 'zones', label: '彩色分区', def: true }
+  ],
+  WaterfallChart: [
+    { key: 'connectors', label: '连接线', def: true },
+    { key: 'values', label: '数值标签', def: true }
+  ],
+  CandlestickChart: [
+    { key: 'ma', label: 'MA5 均线', def: true },
+    { key: 'hollow', label: '空心阳线', def: false }
+  ],
+  HeatmapChart: [
+    { key: 'values', label: '单元格数值', def: false },
+    { key: 'mono', label: '单色渐变', def: false },
+    { key: 'round', label: '圆角单元格', def: false },
+    { key: 'gap', label: '单元格间隙', def: true }
+  ],
+  TreemapChart: [
+    { key: 'gap', label: '矩形间隙', def: true },
+    { key: 'round', label: '圆角矩形', def: false }
+  ],
+  SankeyChart: [],
+  NightingaleRoseChart: [
+    { key: 'labels', label: '扇区标签', def: true },
+    { key: 'area', label: '面积映射', def: false },
+    { key: 'gap', label: '扇区间隙', def: true }
+  ],
+  CalendarHeatmap: [
+    { key: 'legend', label: '强度图例', def: true }
+  ],
+  MixedChart: [
+    { key: 'smooth', label: '平滑折线', def: true }
+  ],
+  SparklineChart: [
+    { key: 'area', label: '面积填充', def: true },
+    { key: 'smooth', label: '平滑', def: true },
+    { key: 'endDot', label: '末端圆点', def: true }
+  ],
+  ProgressRingChart: [
+    { key: 'rounded', label: '圆头端点', def: true },
+    { key: 'centerText', label: '中心文字', def: true }
+  ],
+  StackedBarChart: [
+    { key: 'values', label: '分段数值', def: false },
+    { key: 'percent', label: '百分比堆叠', def: false }
+  ]
+};
+
+/* ============================================================
+   KOTLIN DSL CODE GENERATORS (syntax highlighted)
+   ============================================================ */
+// tokens: kw, str, num, fn, prop, punc, com
+function K(s) { return '<span class="tok-kw">' + s + '</span>'; }
+function S(s) { return '<span class="tok-str">"' + s + '"</span>'; }
+function N(s) { return '<span class="tok-num">' + s + '</span>'; }
+function F(s) { return '<span class="tok-fn">' + s + '</span>'; }
+function P(s) { return '<span class="tok-prop">' + s + '</span>'; }
+function C(s) { return '<span class="tok-com">' + s + '</span>'; }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function activeToggleList(state) {
+  const cfg = TOGGLE_CONFIG[state.id] || [];
+  return cfg.filter(t => state.opts[t.key]).map(t => t.key);
+}
+
+const dslGenerators = {
+  LineChart(state) {
+    return [
+      F('LineChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('smooth') + ' = ' + K(String(!!state.opts.smooth)),
+      '    ' + P('showDots') + ' = ' + K(String(!!state.opts.dots)),
+      '    ' + P('stepMode') + ' = ' + K(String(!!state.opts.step)),
+      '    ' + F('series') + '(' + S('访问量') + ') { data(' + state.data.series[0].values.join(', ') + ') }',
+      '    ' + F('series') + '(' + S('下单量') + ') { data(' + state.data.series[1].values.join(', ') + ') }',
+      '    ' + F('xAxis') + '(listOf(' + state.data.labels.map(l => '"' + l + '"').join(', ') + '))',
+      '}'
+    ].join('\n');
+  },
+  BarChart(state) {
+    return [
+      F('BarChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('grouped') + ' = ' + K('true'),
+      '    ' + P('showValues') + ' = ' + K(String(!!state.opts.values)),
+      '    ' + F('series') + '(' + S('线上') + ') { data(' + state.data.series[0].values.join(', ') + ') }',
+      '    ' + F('series') + '(' + S('线下') + ') { data(' + state.data.series[1].values.join(', ') + ') }',
+      '    ' + F('xAxis') + '(listOf(' + state.data.labels.map(l => '"' + l + '"').join(', ') + '))',
+      '}'
+    ].join('\n');
+  },
+  AreaChart(state) {
+    return [
+      F('AreaChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('smooth') + ' = ' + K(String(!!state.opts.smooth)),
+      '    ' + P('gradientFill') + ' = ' + K('true'),
+      '    ' + F('series') + '(' + S('CPU %') + ') { data(' + state.data.series[0].values.join(', ') + ') }',
+      '    ' + F('series') + '(' + S('内存 %') + ') { data(' + state.data.series[1].values.join(', ') + ') }',
+      '}'
+    ].join('\n');
+  },
+  PieChart(state) {
+    const lines = [F('PieChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('showLabels') + ' = ' + K(String(!!state.opts.labels)),
+      '    ' + P('leaderLine') + ' = ' + K('true')];
+    state.data.items.forEach(it => {
+      lines.push('    ' + F('slice') + '(' + S(it.name) + ', ' + N(it.value) + ')');
+    });
+    lines.push('}');
+    return lines.join('\n');
+  },
+  DonutChart(state) {
+    const lines = [F('DonutChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('innerRadius') + ' = ' + N(state.opts.thick ? '0.55f' : '0.68f'),
+      '    ' + P('centerText') + ' = ' + S('总支出'),
+      '    ' + P('padAngle') + ' = ' + N(state.opts.gap ? '2f' : '0f')];
+    state.data.items.forEach(it => {
+      lines.push('    ' + F('slice') + '(' + S(it.name) + ', ' + N(it.value) + ')');
+    });
+    lines.push('}');
+    return lines.join('\n');
+  },
+  ScatterChart(state) {
+    return [
+      F('ScatterChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('trendLine') + ' = ' + K(String(!!state.opts.trend)),
+      '    ' + P('pointRadius') + ' = ' + N('4f'),
+      '    ' + F('group') + '(' + S('A组') + ') { ' + C('/* ' + state.data.groups[0].points.length + ' points */') + ' }',
+      '    ' + F('group') + '(' + S('B组') + ') { ' + C('/* ' + state.data.groups[1].points.length + ' points */') + ' }',
+      '}'
+    ].join('\n');
+  },
+  BubbleChart(state) {
+    return [
+      F('BubbleChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('showZLabel') + ' = ' + K(String(!!state.opts.zLabels)),
+      '    ' + P('maxRadius') + ' = ' + N('22f'),
+      '    ' + F('group') + '(' + S('一线城市') + ') { ' + C('/* x, y, size */') + ' }',
+      '    ' + F('group') + '(' + S('二线城市') + ') { ... }',
+      '}'
+    ].join('\n');
+  },
+  BoxplotChart(state) {
+    const lines = [F('BoxplotChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('showOutliers') + ' = ' + K(String(!!state.opts.outliers))];
+    state.data.boxes.forEach(b => {
+      lines.push('    ' + F('box') + '(' + S(b.name) + ', min=' + N(b.min) + ', q1=' + N(b.q1) +
+        ', med=' + N(b.median) + ', q3=' + N(b.q3) + ', max=' + N(b.max) + ')');
+    });
+    lines.push('}');
+    return lines.join('\n');
+  },
+  RadarChart(state) {
+    return [
+      F('RadarChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('fillArea') + ' = ' + K(String(!!state.opts.fill)),
+      '    ' + P('showDots') + ' = ' + K(String(!!state.opts.dots)),
+      '    ' + P('indicators') + ' = listOf(' + state.data.axes.map(a => '"' + a + '"').join(', ') + ')',
+      '    ' + F('series') + '(' + S('战士') + ') { data(' + state.data.series[0].values.join(', ') + ') }',
+      '    ' + F('series') + '(' + S('法师') + ') { data(' + state.data.series[1].values.join(', ') + ') }',
+      '}'
+    ].join('\n');
+  },
+  FunnelChart(state) {
+    const lines = [F('FunnelChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('shape') + ' = ' + K(state.opts.pyramid ? 'Pyramid' : 'Funnel'),
+      '    ' + P('showLabels') + ' = ' + K(String(!!state.opts.labels))];
+    state.data.items.forEach(it => {
+      lines.push('    ' + F('stage') + '(' + S(it.name) + ', ' + N(it.value) + ')');
+    });
+    lines.push('}');
+    return lines.join('\n');
+  },
+  GaugeChart(state) {
+    return [
+      F('GaugeChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('value') + ' = ' + N(Math.round(state.data.value) + 'f'),
+      '    ' + P('max') + ' = ' + N(state.data.max + 'f'),
+      '    ' + P('unit') + ' = ' + S(state.data.unit),
+      '    ' + P('coloredZones') + ' = ' + K(String(!!state.opts.zones)),
+      '}'
+    ].join('\n');
+  },
+  WaterfallChart(state) {
+    const lines = [F('WaterfallChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('connectors') + ' = ' + K(String(!!state.opts.connectors))];
+    state.data.items.forEach(it => {
+      if (it.total) lines.push('    ' + F('total') + '(' + S(it.name) + ', ' + N(it.value) + ')');
+      else lines.push('    ' + F('delta') + '(' + S(it.name) + ', ' + N((it.value >= 0 ? '+' : '') + it.value) + ')');
+    });
+    lines.push('}');
+    return lines.join('\n');
+  },
+  CandlestickChart(state) {
+    return [
+      F('CandlestickChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('maPeriod') + ' = ' + (state.opts.ma ? N('5') : K('null')),
+      '    ' + P('hollowUp') + ' = ' + K(String(!!state.opts.hollow)),
+      '    ' + F('ohlc') + '(open, high, low, close) ' + C('// x ' + state.data.candles.length),
+      '    ' + C('// e.g. ohlc(' + state.data.candles[0].open + ', ' + state.data.candles[0].high +
+        ', ' + state.data.candles[0].low + ', ' + state.data.candles[0].close + ')'),
+      '}'
+    ].join('\n');
+  },
+  HeatmapChart(state) {
+    return [
+      F('HeatmapChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('colorScale') + ' = ' + K(state.opts.mono ? 'Mono' : 'Spectrum'),
+      '    ' + P('showValues') + ' = ' + K(String(!!state.opts.values)),
+      '    ' + P('rounded') + ' = ' + K(String(!!state.opts.round)),
+      '    ' + P('xLabels') + ' = listOf(' + state.data.xLabels.map(l => '"' + l + '"').join(', ') + ')',
+      '    ' + P('yLabels') + ' = listOf(' + state.data.yLabels.map(l => '"' + l + '"').join(', ') + ')',
+      '}'
+    ].join('\n');
+  },
+  TreemapChart(state) {
+    const lines = [F('TreemapChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('rounded') + ' = ' + K(String(!!state.opts.round)),
+      '    ' + P('padding') + ' = ' + N(state.opts.gap ? '3f' : '1f')];
+    state.data.items.slice(0, 4).forEach(it => {
+      lines.push('    ' + F('node') + '(' + S(it.name) + ', ' + N(it.value) + ')');
+    });
+    lines.push('    ' + C('// ... ' + (state.data.items.length - 4) + ' more'));
+    lines.push('}');
+    return lines.join('\n');
+  },
+  SankeyChart(state) {
+    return [
+      F('SankeyChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('nodeWidth') + ' = ' + N('12f'),
+      '    ' + F('node') + '(' + S('访客') + '); ' + F('node') + '(' + S('活跃') + '); ' + F('node') + '(' + S('付费') + ')',
+      '    ' + F('link') + '(' + S('访客') + ', ' + S('活跃') + ', ' + N(state.data.links[0].value) + ')',
+      '    ' + F('link') + '(' + S('活跃') + ', ' + S('付费') + ', ' + N(state.data.links[4].value) + ')',
+      '    ' + C('// ... more flows'),
+      '}'
+    ].join('\n');
+  },
+  NightingaleRoseChart(state) {
+    const lines = [F('NightingaleRoseChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('radiusMode') + ' = ' + K(state.opts.area ? 'Area' : 'Radius'),
+      '    ' + P('showLabels') + ' = ' + K(String(!!state.opts.labels))];
+    state.data.items.slice(0, 4).forEach(it => {
+      lines.push('    ' + F('sector') + '(' + S(it.name) + ', ' + N(it.value) + ')');
+    });
+    lines.push('    ' + C('// ... more sectors'));
+    lines.push('}');
+    return lines.join('\n');
+  },
+  CalendarHeatmap(state) {
+    return [
+      F('CalendarHeatmap') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('weeks') + ' = ' + N('52'),
+      '    ' + P('showLegend') + ' = ' + K(String(!!state.opts.legend)),
+      '    ' + P('levels') + ' = ' + N('5'),
+      '    ' + F('contributions') + '(dailyValues) ' + C('// 365 days'),
+      '}'
+    ].join('\n');
+  },
+  MixedChart(state) {
+    return [
+      F('MixedChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + F('bars') + '(' + S('销售额') + ') { data(' + state.data.bar.values.join(', ') + ') }',
+      '    ' + F('line') + '(' + S('增长率 %') + ') {',
+      '        ' + P('smooth') + ' = ' + K(String(!!state.opts.smooth)),
+      '        ' + P('axis') + ' = YAxis.Right',
+      '        ' + F('data') + '(' + state.data.line.values.join(', ') + ')',
+      '    }',
+      '}'
+    ].join('\n');
+  },
+  SparklineChart(state) {
+    const lines = [F('SparklineGroup') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('fillArea') + ' = ' + K(String(!!state.opts.area)),
+      '    ' + P('smooth') + ' = ' + K(String(!!state.opts.smooth)),
+      '    ' + P('endDot') + ' = ' + K(String(!!state.opts.endDot))];
+    state.data.rows.slice(0, 3).forEach(r => {
+      lines.push('    ' + F('sparkline') + '(' + S(r.name) + ') { data(' + r.values.slice(0, 6).join(', ') + ', ...) }');
+    });
+    lines.push('    ' + C('// ... more rows'));
+    lines.push('}');
+    return lines.join('\n');
+  },
+  ProgressRingChart(state) {
+    const lines = [F('ProgressRingChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('roundedCap') + ' = ' + K(String(!!state.opts.rounded)),
+      '    ' + P('centerText') + ' = ' + K(String(!!state.opts.centerText))];
+    state.data.rings.forEach(r => {
+      lines.push('    ' + F('ring') + '(' + S(r.name) + ', value=' + N(r.value) + ', max=' + N(r.max) + ')');
+    });
+    lines.push('}');
+    return lines.join('\n');
+  },
+  StackedBarChart(state) {
+    return [
+      F('StackedBarChart') + ' {',
+      '    ' + P('theme') + ' = ChartTheme.' + K(state.theme),
+      '    ' + P('percentMode') + ' = ' + K(String(!!state.opts.percent)),
+      '    ' + P('showValues') + ' = ' + K(String(!!state.opts.values)),
+      '    ' + F('series') + '(' + S('产品A') + ') { data(' + state.data.series[0].values.join(', ') + ') }',
+      '    ' + F('series') + '(' + S('产品B') + ') { data(' + state.data.series[1].values.join(', ') + ') }',
+      '    ' + F('series') + '(' + S('产品C') + ') { data(' + state.data.series[2].values.join(', ') + ') }',
+      '    ' + F('xAxis') + '(listOf(' + state.data.labels.map(l => '"' + l + '"').join(', ') + '))',
+      '}'
+    ].join('\n');
+  }
+};
+
+/* ============================================================
+   BUILD SIDEBAR NAVIGATION
+   ============================================================ */
+function buildSidebar() {
+  const nav = document.getElementById('navList');
+  let html = '';
+  CATEGORIES.forEach(cat => {
+    const items = CHART_REGISTRY.filter(c => c.cat === cat);
+    html += '<div class="nav-group" data-cat="' + cat + '">';
+    html += '<div class="nav-group-title">' + cat +
+      '<span class="count">' + items.length + '</span></div>';
+    items.forEach(c => {
+      html += '<a class="nav-item" href="#card-' + c.id + '" data-id="' + c.id +
+        '" data-name="' + c.name.toLowerCase() + '" data-cn="' + c.cn + '">' +
+        '<span class="dot" style="background:' + c.color + '"></span>' +
+        '<span class="nav-item-name">' + c.name + '</span></a>';
+    });
+    html += '</div>';
+  });
+  nav.innerHTML = html;
+}
+
+/* ============================================================
+   BUILD CHART CARDS
+   ============================================================ */
+function buildChartCards() {
+  const container = document.getElementById('chartContainer');
+  let html = '';
+  CHART_REGISTRY.forEach((c, idx) => {
+    const toggles = TOGGLE_CONFIG[c.id] || [];
+    html += '<section class="chart-card" id="card-' + c.id + '" data-id="' + c.id + '">';
+
+    // header
+    html += '<div class="card-header">';
+    html += '<div class="badge" style="background:' + c.color + '">' + c.icon + '</div>';
+    html += '<div class="title-wrap"><h3>' + c.name + ' <span style="color:var(--text-muted);font-weight:400;font-size:15px">' + c.cn + '</span></h3>';
+    html += '<div class="desc">' + c.desc + '</div></div>';
+    html += '<span class="category-tag">' + c.cat + '</span>';
+    html += '</div>';
+
+    // body
+    html += '<div class="card-body">';
+
+    // phone frame
+    html += '<div class="phone-col"><div class="phone-frame">';
+    html += '<div class="notch"></div>';
+    html += '<div class="screen">';
+    html += '<div class="status-bar"><span class="time">9:41</span>';
+    html += '<span class="indicators">';
+    html += '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h2v-4H2v4zm4 0h2v-8H6v8zm4 0h2V7h-2v10zm4 0h2V4h-2v13zm4 0h2v-6h-2v6z"/></svg>';
+    html += '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7 4 2.7 6 0 9l12 15L24 9c-2.7-3-7-5-12-5z"/></svg>';
+    html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="18" height="10" rx="2"/><rect x="4" y="9" width="12" height="6" rx="1" fill="currentColor"/><path d="M22 10v4" stroke-linecap="round"/></svg>';
+    html += '</span></div>';
+    html += '<div class="app-header"><div class="app-title">' + c.name + '</div>';
+    html += '<div class="app-sub">KuiklyChartView Demo</div></div>';
+    html += '<div class="canvas-area"><canvas id="canvas-' + c.id + '"></canvas></div>';
+    html += '<div class="home-indicator"></div>';
+    html += '</div></div></div>';
+
+    // controls
+    html += '<div class="controls-col">';
+
+    // theme picker
+    html += '<div class="control-section"><div class="control-label">' +
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/><path d="M12 2a10 10 0 000 20 3 3 0 002-5 3 3 0 013-3 5 5 0 00-5-12z"/></svg>' +
+      '配色主题</div>';
+    html += '<div class="theme-picker" data-id="' + c.id + '">';
+    THEME_ORDER.forEach((t, ti) => {
+      const swatches = THEMES[t].slice(0, 5).map(col =>
+        '<span class="swatch" style="background:' + col + '"></span>').join('');
+      html += '<label class="theme-option' + (ti === 0 ? ' active' : '') + '" data-theme="' + t + '">' +
+        '<input type="radio" name="theme-' + c.id + '" value="' + t + '"' + (ti === 0 ? ' checked' : '') + '>' +
+        '<span class="swatches">' + swatches + '</span>' +
+        '<span class="theme-name">' + t + '</span></label>';
+    });
+    html += '</div></div>';
+
+    // toggles
+    if (toggles.length > 0) {
+      html += '<div class="control-section"><div class="control-label">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="4"/><circle cx="16" cy="16" r="4"/><path d="M4 8h4M20 16h-4" stroke-linecap="round"/></svg>' +
+        '图表选项</div><div class="toggles" data-id="' + c.id + '">';
+      toggles.forEach(t => {
+        html += '<label class="toggle-row"><span class="toggle-label">' + t.label + '</span>' +
+          '<span class="switch"><input type="checkbox" data-key="' + t.key + '"' +
+          (t.def ? ' checked' : '') + '><span class="slider"></span></span></label>';
+      });
+      html += '</div></div>';
+    }
+
+    // randomize
+    html += '<div class="control-section">';
+    html += '<button class="btn-randomize" data-id="' + c.id + '">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      '随机生成数据</button>';
+    html += '</div>';
+
+    html += '</div>'; // controls-col
+
+    // code section
+    html += '<div class="code-section"><div class="code-block">';
+    html += '<div class="code-header"><div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>';
+    html += '<span class="filename">' + c.name + '.kt</span>';
+    html += '<button class="copy-btn" data-id="' + c.id + '">' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>' +
+      '<span class="copy-text">复制</span></button>';
+    html += '</div>';
+    html += '<pre><code id="code-' + c.id + '"></code></pre>';
+    html += '</div></div>';
+
+    html += '</div>'; // card-body
+    html += '</section>';
+  });
+  container.innerHTML = html;
+}
+
+/* ============================================================
+   STATE INIT + RENDER
+   ============================================================ */
+function initStates() {
+  CHART_REGISTRY.forEach(c => {
+    const opts = {};
+    (TOGGLE_CONFIG[c.id] || []).forEach(t => { opts[t.key] = t.def; });
+    chartStates[c.id] = {
+      id: c.id,
+      theme: 'Default',
+      opts: opts,
+      data: dataGenerators[c.id]()
+    };
+  });
+}
+
+function renderChart(chartId) {
+  const state = chartStates[chartId];
+  const canvas = document.getElementById('canvas-' + chartId);
+  if (!canvas) return;
+  const colors = THEMES[state.theme];
+  try {
+    renderers[chartId](canvas, state.data, state.opts, colors);
+  } catch (e) {
+    console.error('render error for ' + chartId, e);
+  }
+  updateCode(chartId);
+}
+
+function updateCode(chartId) {
+  const el = document.getElementById('code-' + chartId);
+  if (!el) return;
+  const state = chartStates[chartId];
+  el.innerHTML = dslGenerators[chartId](state);
+}
+
+function renderAll() {
+  CHART_REGISTRY.forEach(c => renderChart(c.id));
+}
+
+/* ============================================================
+   EVENT WIRING
+   ============================================================ */
+function wireEvents() {
+  const container = document.getElementById('chartContainer');
+
+  // theme picker (event delegation)
+  container.addEventListener('change', (e) => {
+    const radio = e.target.closest('input[type="radio"]');
+    if (radio) {
+      const picker = radio.closest('.theme-picker');
+      const id = picker.dataset.id;
+      chartStates[id].theme = radio.value;
+      picker.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+      radio.closest('.theme-option').classList.add('active');
+      renderChart(id);
+      return;
+    }
+    const checkbox = e.target.closest('input[type="checkbox"]');
+    if (checkbox) {
+      const toggles = checkbox.closest('.toggles');
+      const id = toggles.dataset.id;
+      const key = checkbox.dataset.key;
+      chartStates[id].opts[key] = checkbox.checked;
+      renderChart(id);
+    }
+  });
+
+  // randomize + copy (event delegation on click)
+  container.addEventListener('click', (e) => {
+    const rand = e.target.closest('.btn-randomize');
+    if (rand) {
+      const id = rand.dataset.id;
+      chartStates[id].data = dataGenerators[id]();
+      renderChart(id);
+      // pulse animation
+      const canvas = document.getElementById('canvas-' + id);
+      canvas.style.transition = 'opacity 0.18s';
+      canvas.style.opacity = '0.35';
+      setTimeout(() => { canvas.style.opacity = '1'; }, 60);
+      return;
+    }
+    const copy = e.target.closest('.copy-btn');
+    if (copy) {
+      const id = copy.dataset.id;
+      const code = document.getElementById('code-' + id).innerText;
+      const txtEl = copy.querySelector('.copy-text');
+      const doFallback = () => {
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (err) {}
+        document.body.removeChild(ta);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).catch(doFallback);
+      } else {
+        doFallback();
+      }
+      const old = txtEl.textContent;
+      txtEl.textContent = '已复制!';
+      setTimeout(() => { txtEl.textContent = old; }, 1400);
+    }
+  });
+}
+
+/* ============================================================
+   SIDEBAR SEARCH
+   ============================================================ */
+function wireSearch() {
+  const input = document.getElementById('searchInput');
+  const noResults = document.getElementById('noResults');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    let anyVisible = false;
+    document.querySelectorAll('.nav-group').forEach(group => {
+      let groupHas = false;
+      group.querySelectorAll('.nav-item').forEach(item => {
+        const name = item.dataset.name || '';
+        const cn = item.dataset.cn || '';
+        const match = !q || name.includes(q) || cn.includes(q);
+        item.classList.toggle('hidden', !match);
+        if (match) { groupHas = true; anyVisible = true; }
+      });
+      group.classList.toggle('hidden', !groupHas);
+    });
+    noResults.style.display = anyVisible ? 'none' : 'block';
+  });
+}
+
+/* ============================================================
+   SIDEBAR ACTIVE STATE + SMOOTH SCROLL
+   ============================================================ */
+function wireNavigation() {
+  const navItems = document.querySelectorAll('.nav-item');
+  const overlay = document.getElementById('sidebarOverlay');
+  const sidebar = document.getElementById('sidebar');
+
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = item.dataset.id;
+      const card = document.getElementById('card-' + id);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // close mobile menu
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      setActiveNav(id);
+    });
+  });
+
+  // IntersectionObserver to highlight active nav on scroll
+  const observer = new IntersectionObserver((entries) => {
+    let best = null;
+    let bestRatio = 0;
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
+        bestRatio = entry.intersectionRatio;
+        best = entry.target.dataset.id;
+      }
+    });
+    if (best) setActiveNav(best);
+  }, {
+    rootMargin: '-20% 0px -60% 0px',
+    threshold: [0, 0.15, 0.35, 0.6, 1]
+  });
+
+  document.querySelectorAll('.chart-card').forEach(card => observer.observe(card));
+}
+
+function setActiveNav(id) {
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.id === id);
+  });
+  // scroll active item into view within sidebar
+  const active = document.querySelector('.nav-item.active');
+  if (active) {
+    const rect = active.getBoundingClientRect();
+    if (rect.top < 80 || rect.bottom > window.innerHeight - 20) {
+      active.scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+
+/* ============================================================
+   DARK / LIGHT MODE
+   ============================================================ */
+function wireTheme() {
+  const toggle = document.getElementById('themeToggle');
+  const moon = document.getElementById('themeIconMoon');
+  const sun = document.getElementById('themeIconSun');
+  const root = document.documentElement;
+
+  function apply(mode) {
+    root.setAttribute('data-theme', mode);
+    if (mode === 'dark') {
+      moon.style.display = 'none';
+      sun.style.display = 'block';
+    } else {
+      moon.style.display = 'block';
+      sun.style.display = 'none';
+    }
+    try { localStorage.setItem('kcv-theme', mode); } catch (e) {}
+    // re-render all charts since canvas colors depend on theme
+    renderAll();
+  }
+
+  let saved = 'light';
+  try { saved = localStorage.getItem('kcv-theme') || 'light'; } catch (e) {}
+  apply(saved);
+
+  toggle.addEventListener('click', () => {
+    const current = root.getAttribute('data-theme');
+    apply(current === 'dark' ? 'light' : 'dark');
+  });
+}
+
+/* ============================================================
+   MOBILE HAMBURGER
+   ============================================================ */
+function wireHamburger() {
+  const hamburger = document.getElementById('hamburger');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+}
+
+/* ============================================================
+   SCROLL TO TOP
+   ============================================================ */
+function wireScrollTop() {
+  const btn = document.getElementById('scrollTop');
+  window.addEventListener('scroll', () => {
+    btn.classList.toggle('show', window.scrollY > 500);
+  }, { passive: true });
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/* ============================================================
+   RESIZE HANDLING (debounced)
+   ============================================================ */
+function wireResize() {
+  let timer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(timer);
+    timer = setTimeout(renderAll, 180);
+  });
+}
+
+/* ============================================================
+   BOOTSTRAP
+   ============================================================ */
+function init() {
+  buildSidebar();
+  buildChartCards();
+  initStates();
+  wireEvents();
+  wireSearch();
+  wireNavigation();
+  wireHamburger();
+  wireScrollTop();
+  wireResize();
+  wireTheme(); // wireTheme calls renderAll() at the end
+  // ensure first nav item active
+  if (CHART_REGISTRY.length) setActiveNav(CHART_REGISTRY[0].id);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
