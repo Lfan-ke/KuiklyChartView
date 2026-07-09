@@ -108,22 +108,22 @@ body {
 }
 
 .topbar .brand .logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  backdrop-filter: blur(8px);
+  font-size: 17px;
 }
 
 .topbar .brand h1 {
   color: #fff;
-  font-size: 22px;
+  font-size: 17px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .topbar .brand .subtitle {
@@ -264,8 +264,8 @@ body {
 .sidebar .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 20px;
+  gap: 8px;
+  padding: 7px 16px;
   color: var(--sidebar-text);
   font-size: 13px;
   cursor: pointer;
@@ -406,11 +406,13 @@ body {
 /* ============================================================
    Chart Card
    ============================================================ */
+#chartContainer{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+
 .chart-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 40px;
+  margin-bottom: 0;
   box-shadow: var(--shadow-sm);
   scroll-margin-top: calc(var(--topbar-h) + 20px);
   overflow: hidden;
@@ -420,21 +422,21 @@ body {
 .chart-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
 
 .chart-card .card-header {
-  padding: 20px 28px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .chart-card .card-header .badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 17px;
   color: #fff;
   flex-shrink: 0;
 }
@@ -442,9 +444,9 @@ body {
 .chart-card .card-header .title-wrap { flex: 1; }
 
 .chart-card .card-header h3 {
-  font-size: 20px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
 }
 
 .chart-card .card-header .desc {
@@ -465,9 +467,9 @@ body {
 
 .chart-card .card-body {
   display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 32px;
-  padding: 28px;
+  grid-template-columns: 200px 1fr;
+  gap: 14px;
+  padding: 14px;
 }
 
 /* ============================================================
@@ -480,32 +482,19 @@ body {
 }
 
 .phone-frame {
-  width: 300px;
-  height: 560px;
+  width: 200px;
+  height: 240px;
   background: #1a1a1f;
-  border-radius: 42px;
-  padding: 12px;
+  border-radius: 14px;
+  padding: 4px;
   box-shadow:
-    0 0 0 2px #2a2a30,
-    0 20px 40px -12px rgba(0,0,0,0.4),
-    inset 0 0 0 2px rgba(255,255,255,0.04);
+    0 0 0 1px #2a2a30,
+    0 8px 20px -4px rgba(0,0,0,0.4);
   position: relative;
 }
 
 .phone-frame .notch {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 130px;
-  height: 26px;
-  background: #1a1a1f;
-  border-radius: 0 0 18px 18px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 40px;
+  display: none;
 }
 
 .phone-frame .notch::before {
@@ -529,7 +518,7 @@ body {
   width: 100%;
   height: 100%;
   background: #ffffff;
-  border-radius: 32px;
+  border-radius: 11px;
   overflow: hidden;
   position: relative;
   display: flex;
@@ -540,17 +529,7 @@ body {
   background: #0f172a;
 }
 
-.phone-frame .status-bar {
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 0 22px 4px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
+.phone-frame .status-bar { display: none; }
 
 .phone-frame .status-bar .time { font-variant-numeric: tabular-nums; }
 
@@ -562,10 +541,7 @@ body {
 
 .phone-frame .status-bar .indicators svg { width: 16px; height: 16px; }
 
-.phone-frame .app-header {
-  padding: 6px 18px 10px;
-  flex-shrink: 0;
-}
+.phone-frame .app-header { display: none; }
 
 .phone-frame .app-header .app-title {
   font-size: 17px;
@@ -591,15 +567,7 @@ body {
   display: block;
 }
 
-.phone-frame .home-indicator {
-  height: 5px;
-  width: 120px;
-  background: var(--text-muted);
-  opacity: 0.4;
-  border-radius: 3px;
-  margin: 4px auto 8px;
-  flex-shrink: 0;
-}
+.phone-frame .home-indicator { display: none; }
 
 /* ============================================================
    Controls Panel
@@ -759,8 +727,27 @@ body {
    ============================================================ */
 .code-section {
   grid-column: 1 / -1;
-  margin-top: 4px;
+  margin-top: 0;
 }
+.dsl-btn {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  transition: background var(--transition), color var(--transition);
+  margin-bottom: 6px;
+}
+.dsl-btn:hover { background: var(--main-bg); color: var(--accent); }
+.code-wrap { display: none; }
+.code-wrap.open { display: block; }
 
 .code-block {
   background: var(--code-bg);
@@ -854,10 +841,11 @@ body {
 
 .sidebar-overlay.show { display: block; }
 
-@media (max-width: 1024px) {
-  .chart-card .card-body {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 1200px) {
+  #chartContainer { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .chart-card .card-body { grid-template-columns: 1fr; }
   .phone-col { margin-bottom: 8px; }
 }
 
@@ -881,12 +869,9 @@ body {
 }
 
 @media (max-width: 480px) {
-  .phone-frame {
-    width: 260px;
-    height: 500px;
-  }
+  .phone-frame { width: 180px; height: 200px; }
   .theme-picker { grid-template-columns: 1fr; }
-  .topbar .brand h1 { font-size: 18px; }
+  .topbar .brand h1 { font-size: 15px; }
 }
 
 /* Scroll-to-top button */
@@ -3561,8 +3546,12 @@ function buildChartCards() {
 
     html += '</div>'; // controls-col
 
-    // code section
-    html += '<div class="code-section"><div class="code-block">';
+    // code section (collapsible)
+    html += '<div class="code-section">';
+    html += '<button class="dsl-btn" data-wrap="wrap-' + c.id + '">' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+      'DSL 代码 ▾</button>';
+    html += '<div class="code-wrap" id="wrap-' + c.id + '"><div class="code-block">';
     html += '<div class="code-header"><div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>';
     html += '<span class="filename">' + c.name + '.kt</span>';
     html += '<button class="copy-btn" data-id="' + c.id + '">' +
@@ -3570,7 +3559,7 @@ function buildChartCards() {
       '<span class="copy-text">复制</span></button>';
     html += '</div>';
     html += '<pre><code id="code-' + c.id + '"></code></pre>';
-    html += '</div></div>';
+    html += '</div></div></div>';
 
     html += '</div>'; // card-body
     html += '</section>';
@@ -3749,6 +3738,15 @@ function wireNavigation() {
   });
 
   document.querySelectorAll('.chart-card').forEach(card => observer.observe(card));
+
+  // DSL toggle
+  document.querySelectorAll('.dsl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrap = document.getElementById(btn.dataset.wrap);
+      const open = wrap.classList.toggle('open');
+      btn.lastChild.textContent = open ? ' DSL 代码 ▴' : ' DSL 代码 ▾';
+    });
+  });
 }
 
 function setActiveNav(id) {
